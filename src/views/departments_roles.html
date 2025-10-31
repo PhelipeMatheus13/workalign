@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../public/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
+    <title>Departments - Roles</title>
+    <style>
+        /* Estilos para o carrossel */
+        .carousel-container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            position: relative;
+        }
+
+        .department-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #343a40;
+            font-weight: 600;
+            font-size: 1.8rem;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 15px;
+        }
+
+        .role-card {
+            text-align: center;
+            padding: 0 15px;
+        }
+
+        .role-name {
+            font-size: 1.5rem;
+            color: #343a40;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .role-description {
+            color: #6c757d;
+            margin-bottom: 25px;
+            font-style: italic;
+            line-height: 1.5;
+        }
+
+        .role-stats {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-bottom: 25px;
+        }
+
+        .stat-item {
+            text-align: center;
+            margin: 10px;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #495057;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .highest-paid {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .highest-paid-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+
+        .highest-paid-name {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .highest-paid-salary {
+            font-weight: 600;
+            color: #28a745;
+        }
+
+        .role-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        /* Indicadores posicionados fora do carrossel com 5px de distância */
+        .carousel-indicators-container {
+            position: absolute;
+            bottom: -35px;
+            /* 5px abaixo do carrossel */
+            left: 0;
+            right: 0;
+            text-align: center;
+        }
+
+        .carousel-indicators {
+            position: static;
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+        }
+
+        .carousel-indicators li {
+            background-color: #adb5bd;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 5px;
+        }
+
+        .carousel-indicators .active {
+            background-color: #007bff;
+        }
+
+        .carousel-control-prev,
+        .carousel-control-next {
+            width: 5%;
+            opacity: 0.7;
+        }
+
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            background-color: #343a40;
+            border-radius: 50%;
+            background-size: 60%;
+            width: 35px;
+            height: 35px;
+        }
+
+        /* Botões com cores solicitadas */
+        .btn-create {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+
+        .btn-edit {
+            background-color: #28a745;
+            border-color: #28a745;
+            color: white;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.875rem;
+            border-radius: 4px;
+        }
+
+        /* Header actions */
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            color: #343a40;
+            font-weight: 600;
+            font-size: 1.8rem;
+            margin: 0;
+        }
+
+        /* Tabela de funcionários melhorada */
+        .employees-section {
+            margin-top: 40px;
+        }
+
+        .section-title {
+            margin-bottom: 20px;
+            color: #343a40;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            /* Centralizado */
+        }
+
+        .table-container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .dataTables_wrapper {
+            margin-top: 15px;
+        }
+
+        table.dataTable {
+            border-collapse: collapse !important;
+        }
+
+        table.dataTable thead th {
+            border-bottom: 2px solid #dee2e6;
+            color: #495057;
+            font-weight: 600;
+        }
+
+        table.dataTable tbody td {
+            border-top: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+
+        /* Botão Create New Role */
+        .create-role-btn-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        /* -----------------------
+           LAYOUT: fixar menu lateral
+           -----------------------
+           - Aplica apenas em telas md+ (desktop)
+           - NÃO altera estilos visuais do menu (apenas posicionamento para ficar fixo)
+        */
+        @media (min-width: 768px) {
+
+            /* Seleciona explicitamente o container da coluna (div.col-md-3.menu) para não afetar o <ul class="menu"> interna */
+            .col-md-3.menu {
+                position: fixed;
+                top: 56px;
+                /* valor padrão do navbar do Bootstrap 4 - mantivemos pequeno offset para não sobrepor o navbar */
+                left: 0;
+                height: calc(100vh - 56px);
+                overflow-y: auto;
+                width: 25%;
+                /* corresponde a col-md-3 (aprox. 25%) */
+                z-index: 1020;
+            }
+
+            /* desloca o conteúdo principal para a direita, deixando espaço para o menu fixo */
+            .main-content {
+                margin-left: 25%;
+                max-height: calc(100vh - 56px);
+                overflow-y: auto;
+                /* O SCROLL passa a acontecer somente aqui */
+                padding: 30px;
+            }
+
+            /* Pequeno ajuste caso o seu .container-fluid aplique padding que gere overflow inesperado */
+            .container-fluid,
+            .row {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+
+        /* Em telas menores (mobile) o comportamento volta ao normal - menu não fixo */
+        @media (max-width: 767.98px) {
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* Estilos para loading e estados vazios */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: #dc3545;
+            background-color: #f8d7da;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="../../public/index.html">
+            <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
+        </a>
+
+        <!-- Botão do menu mobile -->
+        <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Menu mobile (dropdown) -->
+        <div class="collapse navbar-collapse d-md-none" id="navbarMobileMenu">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="../../public/index.html" data-menu="dashboard">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="employees.html" data-menu="employees">
+                        <i class="fas fa-users"></i> Employees
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="departments.html" data-menu="departments">
+                        <i class="fas fa-briefcase"></i> Departments
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-menu="reports">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- MENU LATERAL -->
+            <div class="col-md-3 menu d-none d-md-block">
+                <ul class="menu">
+                    <li>
+                        <a href="../../public/index.html" class="menu-item" data-menu="dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="employees.html" class="menu-item" data-menu="employees">
+                            <i class="fas fa-users"></i>
+                            <span>Employees</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="departments.html" class="menu-item active" data-menu="departments">
+                            <i class="fas fa-briefcase"></i>
+                            <span>Departments</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="menu-item" data-menu="reports">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- CONTEÚDO PRINCIPAL -->
+            <div class="col-md-9 main-content">
+                <!-- Botão Create New Role -->
+                <div class="create-role-btn-container">
+                    <a href="register_role.html">
+                        <button type="button" class="btn btn-primary btn-sm btn-create new-role-btn">
+                            <i class="fas fa-plus"></i> New Role
+                        </button>
+                    </a>
+                </div>
+
+                <!-- Carrossel de Funções -->
+                <div class="carousel-container">
+                    <h2 class="department-title" id="departmentTitle">
+                        <div class="loading-spinner"></div>
+                        Loading department...
+                    </h2>
+
+                    <div id="rolesCarousel" class="carousel slide" data-ride="carousel" data-interval="false">
+                        <div class="carousel-inner" id="carouselInner">
+                            <!-- Conteúdo será carregado dinamicamente -->
+                            <div class="loading">
+                                <div class="loading-spinner"></div>
+                                <p>Loading roles...</p>
+                            </div>
+                        </div>
+
+                        <!-- Controles do Carrossel -->
+                        <a class="carousel-control-prev" href="#rolesCarousel" role="button" data-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Previous</span>
+                        </a>
+                        <a class="carousel-control-next" href="#rolesCarousel" role="button" data-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Next</span>
+                        </a>
+                    </div>
+
+                    <!-- Indicadores posicionados fora do carrossel com 5px de distância -->
+                    <div class="carousel-indicators-container">
+                        <ol class="carousel-indicators" id="carouselIndicators">
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Lista de Funcionários -->
+                <div class="employees-section">
+                    <div class="table-container">
+                        <h3 class="section-title">Employees in Current Role</h3>
+                        <table id="employeesTable" class="table table-hover" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Age</th>
+                                    <th>Phone</th>
+                                    <th>Salary</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dados serão preenchidos dinamicamente pelo JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
+    <script src="../../public/js/script.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Obter department_id da URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const departmentId = urlParams.get('department_id');
+
+            if (!departmentId) {
+                showError('Department ID is missing in the URL.');
+                return;
+            }
+
+            if (departmentId) {
+                const newRoleBtn = document.querySelector('.new-role-btn');
+                if (newRoleBtn) {
+                    const link = newRoleBtn.closest('a');
+                    link.href = `register_role.html?department_id=${departmentId}`;
+                    console.log('New Role link updated to:', link.href); // Para debug
+                }
+            }
+
+            // Inicializar a tabela de funcionários
+            var employeesTable = $('#employeesTable').DataTable({
+                "language": {
+                    "emptyTable": "No employees found for this role",
+                    "info": "Showing _START_ to _END_ of _TOTAL_ employees",
+                    "infoEmpty": "Showing 0 to 0 of 0 employees",
+                    "infoFiltered": "(filtered from _MAX_ total employees)",
+                    "lengthMenu": "Show _MENU_ employees",
+                    "search": "Search:",
+                    "zeroRecords": "No matching employees found",
+                    "paginate": {
+                        "first": "First",
+                        "last": "Last",
+                        "next": "Next",
+                        "previous": "Previous"
+                    }
+                },
+                "responsive": true,
+                "columnDefs": [
+                    { "orderable": false, "targets": 4 } // Desabilitar ordenação na coluna de ações
+                ]
+            });
+
+            // Carregar dados do departamento e funções
+            loadDepartmentRolesData(departmentId);
+
+            // Função para carregar dados do departamento
+            function loadDepartmentRolesData(departmentId) {
+                fetch(`../controllers/get_department_roles.php?department_id=${departmentId}`)
+                    .then(response => {
+                        // Primeiro verificar se a resposta é JSON
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                // Se for HTML, provavelmente é uma página de erro
+                                if (text.includes('<html') || text.includes('<!DOCTYPE')) {
+                                    throw new Error('Server returned HTML instead of JSON. Check if PHP file exists and is accessible.');
+                                }
+                                throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        renderDepartmentData(data);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('Failed to load department data: ' + error.message);
+                    });
+            }
+
+            // Função para renderizar dados do departamento
+            function renderDepartmentData(data) {
+                const { department, roles } = data;
+
+                // Atualizar título do departamento
+                $('#departmentTitle').text(department.name);
+
+                // Renderizar carrossel de funções
+                renderRolesCarousel(roles);
+
+                // Carregar funcionários da primeira função (se existir)
+                if (roles.length > 0) {
+                    loadEmployeesForRole(roles[0].id);
+                } else {
+                    employeesTable.clear().draw();
+                }
+            }
+
+            // Função para renderizar o carrossel de funções
+            function renderRolesCarousel(roles) {
+                const carouselInner = $('#carouselInner');
+                const carouselIndicators = $('#carouselIndicators');
+
+                carouselInner.empty();
+                carouselIndicators.empty();
+
+                if (roles.length === 0) {
+                    carouselInner.html(`
+                        <div class="no-data">
+                            <h3>Not Found</h3>
+                            <p>No functions found for the department.</p>
+                        </div>
+                    `);
+                    return;
+                }
+
+                roles.forEach((role, index) => {
+                    // Criar indicador
+                    const indicator = $('<li></li>')
+                        .attr('data-target', '#rolesCarousel')
+                        .attr('data-slide-to', index)
+                        .toggleClass('active', index === 0);
+                    carouselIndicators.append(indicator);
+
+                    // Criar item do carrossel
+                    const carouselItem = $('<div></div>')
+                        .addClass('carousel-item')
+                        .toggleClass('active', index === 0)
+                        .attr('data-role-id', role.id);
+
+                    // Construir o conteúdo do item
+                    const roleCard = `
+                        <div class="role-card">
+                            <h3 class="role-name">${escapeHtml(role.name)}</h3>
+                            <p class="role-description">${escapeHtml(role.description || 'No description available.')}</p>
+                            
+                            <div class="role-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value">${role.employees_count}</span>
+                                    <span class="stat-label">Employees</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">$${role.total_salary}</span>
+                                    <span class="stat-label">Total Salary</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">-</span>
+                                    <span class="stat-label">Avg. Age</span>
+                                </div>
+                            </div>
+                            
+                            <div class="highest-paid">
+                                <div class="highest-paid-label">Highest Paid Employee</div>
+                                <div>
+                                    <span class="highest-paid-name">${escapeHtml(role.highest_paid_name || 'N/A')}</span> - 
+                                    <span class="highest-paid-salary">${role.highest_paid_salary ? '$' + role.highest_paid_salary : 'N/A'}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="role-actions">
+                                <button class="btn btn-edit btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn btn-delete btn-sm">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    carouselItem.html(roleCard);
+                    carouselInner.append(carouselItem);
+                });
+
+                // Reinicializar o carrossel
+                $('#rolesCarousel').carousel('dispose').carousel({ interval: false });
+
+                // Adicionar evento para quando o carrossel mudar
+                $('#rolesCarousel').on('slid.bs.carousel', function (e) {
+                    const activeRoleId = $(e.relatedTarget).data('role-id');
+                    loadEmployeesForRole(activeRoleId);
+
+                    // Atualizar indicadores
+                    $('.carousel-indicators li').removeClass('active');
+                    $('.carousel-indicators li[data-slide-to="' + $(e.relatedTarget).index() + '"]').addClass('active');
+                });
+            }
+
+            // Função para carregar funcionários de uma função específica
+            // Função para carregar funcionários de uma função específica
+            function loadEmployeesForRole(roleId) {
+                employeesTable.clear().draw();
+
+                // Mostrar loading na tabela
+                employeesTable.rows.add([['Loading...', '', '', '', '']]).draw();
+
+                fetch(`../controllers/get_employees_by_role.php?role_id=${roleId}`)
+                    .then(response => {
+                        // Verificar se a resposta é JSON
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            return response.text().then(text => {
+                                throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        updateEmployeesTable(data.employees);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        employeesTable.clear().draw();
+                        employeesTable.rows.add([['Error loading employees', '', '', '', '']]).draw();
+                    });
+            }
+
+            // Função para atualizar a tabela de funcionários
+            function updateEmployeesTable(employees) {
+                employeesTable.clear();
+
+                employees.forEach(function (employee) {
+                    // Adicionar botões de ação para cada funcionário
+                    var actionsHtml = '<div class="table-actions">' +
+                        '<button class="btn btn-edit btn-sm"><i class="fas fa-edit"></i></button>' +
+                        '<button class="btn btn-delete btn-sm"><i class="fas fa-trash"></i></button>' +
+                        '</div>';
+
+                    employeesTable.row.add([
+                        escapeHtml(employee.name), // Nome
+                        employee.age, // Idade
+                        escapeHtml(employee.phone), // Telefone
+                        `$${employee.salary}`, // Salário
+                        actionsHtml // Ações
+                    ]);
+                });
+
+                employeesTable.draw();
+            }
+
+            // Função para mostrar erro
+            function showError(message) {
+                $('#departmentTitle').html(`<div class="error-message">Error Loading Department</div>`);
+                $('#carouselInner').html(`<div class="error-message">${message}</div>`);
+                employeesTable.clear().draw();
+            }
+
+            // Função para escapar HTML (prevenir XSS)
+            function escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            // Evento para o botão de criar nova função
+            $('#createRoleBtn').click(function () {
+                alert('Functionality to create a new role will be implemented here.');
+            });
+
+            // Eventos para os botões de editar e excluir (exemplo)
+            $(document).on('click', '.btn-edit', function () {
+                alert('Edit functionality will be implemented here.');
+            });
+
+            $(document).on('click', '.btn-delete', function () {
+                if (confirm('Are you sure you want to delete this item?')) {
+                    alert('Item deleted successfully!');
+                    // Aqui você implementaria a lógica real de exclusão
+                }
+            });
+
+        });
+    </script>
+
+    <!-- Script para garantir que o menu lateral fique ativo (marca "departments") -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Marcar o menu de departamentos como ativo
+            const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
+            menuItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-menu') === 'departments') {
+                    item.classList.add('active');
+                }
+            });
+
+            // Salvar no localStorage que estamos na página de departamentos
+            try {
+                localStorage.setItem('activeMenu', 'departments');
+            } catch (e) {
+                // se localStorage for impossível (ex: modo privativo), ignoramos silenciosamente
+            }
+        });
+    </script>
+</body>
+
+</html>

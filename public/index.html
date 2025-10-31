@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <title>WorkAlign - dashboard</title>
+    <style>
+        /* Garantir que o layout principal ocupe 100vh sem scroll */
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container-fluid,
+        .row {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Conteúdo principal com scroll */
+        .col-md-9 {
+            height: calc(100vh - 56px);
+            padding: 25px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+
+        /* Títulos das seções */
+        .section-title {
+            font-weight: 500;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        /* Cards padronizados */
+        .dashboard-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .card-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.0rem;
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .card-title {
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+
+        .card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .card-description {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        /* Gráficos */
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            margin-bottom: 20px;
+            height: 350px;
+            border: 1px solid #f0f0f0;
+            overflow: hidden;
+        }
+
+        .chart-title {
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        /* Gráfico de barras customizado */
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .bar-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            height: 25px;
+        }
+
+        .bar-label {
+            width: 120px;
+            font-weight: 500;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .bar-container {
+            flex: 1;
+            height: 25px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 0 15px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .bar-count {
+            width: 30px;
+            text-align: right;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        /* Lista de aniversariantes */
+        .birthday-list {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 25px;
+            margin-bottom: 20px;
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #f0f0f0;
+            overflow: hidden;
+        }
+
+        .birthday-items-container {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .birthday-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .birthday-item:last-child {
+            border-bottom: none;
+        }
+
+        .birthday-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            margin-right: 15px;
+            font-size: 0.8rem;
+        }
+
+        .birthday-info {
+            flex: 1;
+        }
+
+        .birthday-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        .birthday-date {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+
+        /* Botões */
+        .btn-more {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+            align-self: center;
+            font-size: 0.85rem;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-more:hover {
+            background-color: #2980b9;
+        }
+
+        /* Layout das seções */
+        .section-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .top-section {
+            flex: 0 0 auto;
+            margin-bottom: 30px;
+        }
+
+        .charts-section {
+            flex: 0 0 auto;
+        }
+
+        /* Estados de loading */
+        .loading {
+            opacity: 0.7;
+        }
+
+        .loading::after {
+            content: " (Loading...)";
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+
+        /* Ajustes para telas intermediárias (tablets e laptops menores) */
+        @media (max-width: 1250px) and (min-width: 992px) {
+            .dashboard-card {
+                height: 180px;
+                padding: 15px;
+            }
+
+            .card-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 0.6rem;
+            }
+
+            .card-value {
+                font-size: 1.3rem;
+            }
+
+            .card-title {
+                font-size: 0.9rem;
+            }
+
+            .card-description {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 991px) and (min-width: 768px) {
+            .dashboard-card {
+                height: auto;
+                min-height: 160px;
+                padding: 15px;
+            }
+
+            .card-icon {
+                width: 34px;
+                height: 34px;
+                font-size: 0.85rem;
+            }
+
+            .card-value {
+                font-size: 1.5rem;
+            }
+
+            .card-title {
+                font-size: 0.85rem;
+            }
+
+            .card-description {
+                font-size: 0.75rem;
+                text-align: center;
+            }
+
+            .chart-container,
+            .birthday-list {
+                height: 320px;
+                padding: 20px;
+            }
+
+            .bar-label {
+                width: 100px;
+                font-size: 0.8rem;
+            }
+
+            .bar-count {
+                font-size: 0.8rem;
+            }
+
+            .birthday-avatar {
+                width: 34px;
+                height: 34px;
+                font-size: 0.75rem;
+            }
+
+            .birthday-name {
+                font-size: 0.85rem;
+            }
+
+            .birthday-date {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Ajustes para mobile */
+        @media (max-width: 768px) {
+            .col-md-9 {
+                padding: 15px;
+            }
+
+            .dashboard-card {
+                height: auto;
+                min-height: 150px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="index.html">
+            <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
+        </a>
+
+        <!-- Botão do menu mobile -->
+        <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Menu mobile (dropdown) -->
+        <div class="collapse navbar-collapse d-md-none" id="navbarMobileMenu">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="index.html" data-menu="dashboard">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../src/views/employees.html" data-menu="employees">
+                        <i class="fas fa-users"></i> Employees
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../src/views/departments.html" data-menu="departments">
+                        <i class="fas fa-briefcase"></i> Departments
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-menu="reports">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- MENU LATERAL -->
+            <div class="col-md-3 menu d-none d-md-block">
+                <ul class="menu">
+                    <li>
+                        <a href="index.html" class="menu-item" data-menu="dashboard">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="../src/views/employees.html" class="menu-item" data-menu="employees">
+                            <i class="fas fa-users"></i>
+                            <span>Employees</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="../src/views/departments.html" class="menu-item" data-menu="departments">
+                            <i class="fas fa-briefcase"></i>
+                            <span>Departments</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="menu-item" data-menu="reports">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- CONTEÚDO PRINCIPAL -->
+            <div class="col-md-9">
+                <div class="section-container">
+                    <!-- Seção superior com ações rápidas e informações gerais -->
+                    <div class="top-section">
+                        <!-- Cards de Quick Actions -->
+                        <div>
+                            <h5 class="section-title">Quick Actions</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="dashboard-card"
+                                        onclick="window.location.href='../src/views/register_employee.html'">
+                                        <div class="card-header">
+                                            <div class="card-icon" style="background-color: #3498db;">
+                                                <i class="fas fa-user-plus"></i>
+                                            </div>
+                                            <div class="card-title">New Employee</div>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="card-description">Add new employee.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="dashboard-card"
+                                        onclick="window.location.href='../src/views/register_department.html'">
+                                        <div class="card-header">
+                                            <div class="card-icon" style="background-color: #2ecc71;">
+                                                <i class="fas fa-briefcase"></i>
+                                            </div>
+                                            <div class="card-title">New Department</div>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="card-description">Create a new department.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="dashboard-card" onclick="window.location.href='#'">
+                                        <div class="card-header">
+                                            <div class="card-icon" style="background-color: #e74c3c;">
+                                                <i class="fas fa-search"></i>
+                                            </div>
+                                            <div class="card-title">Search Employee</div>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="card-description">Search employees.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="dashboard-card" onclick="window.location.href='#'">
+                                        <div class="card-header">
+                                            <div class="card-icon" style="background-color: #f39c12;">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </div>
+                                            <div class="card-title">View Reports</div>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="card-description">Access reports.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cards de General Information -->
+                        <div>
+                            <h5 class="section-title">General Information</h5>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="dashboard-card">
+                                        <div class="card-header">
+                                            <div class="card-icon" style="background-color: #9b59b6;">
+                                                <i class="fas fa-building"></i>
+                                            </div>
+                                            <div class="card-title">Departments</div>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="card-value loading">0</div>
+                                            <div class="card-description">Active departments</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="dashboard-card">
+                                        <div class="card-header">
+                                            <div class="card-icon" style="background-color: #1abc9c;">
+                                                <i class="fas fa-users"></i>
+                                            </div>
+                                            <div class="card-title">Employees</div>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="card-value loading">0</div>
+                                            <div class="card-description">Active employees</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="dashboard-card">
+                                        <div class="card-header">
+                                            <div class="card-icon" style="background-color: #34495e;">
+                                                <i class="fas fa-dollar-sign"></i>
+                                            </div>
+                                            <div class="card-title">Average Salary</div>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="card-value loading">$0</div>
+                                            <div class="card-description">Average monthly salary</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="dashboard-card">
+                                        <div class="card-header">
+                                            <div class="card-icon" style="background-color: #e67e22;">
+                                                <i class="fas fa-money-bill-wave"></i>
+                                            </div>
+                                            <div class="card-title">Total Expenses</div>
+                                        </div>
+                                        <div class="card-content">
+                                            <div class="card-value loading">$0</div>
+                                            <div class="card-description">Monthly salary expenses</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção de gráficos e aniversariantes -->
+                    <div class="charts-section">
+                        <div class="row mt-4">
+                            <div class="col-md-8">
+                                <div class="chart-container">
+                                    <div class="chart-title">Employees by Department</div>
+                                    <div class="bar-chart" id="departmentChart">
+                                        <!-- Dados serão carregados dinamicamente via JavaScript -->
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                                            <div class="mt-2 text-muted">Loading department data...</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="birthday-list">
+                                    <div class="chart-title">Upcoming Birthdays</div>
+                                    <div class="birthday-items-container" id="birthdayList">
+                                        <!-- Dados serão carregados dinamicamente via JavaScript -->
+                                        <div class="text-center py-5">
+                                            <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                                            <div class="mt-2 text-muted">Loading birthday data...</div>
+                                        </div>
+                                    </div>
+                                    <button class="btn-more">See More</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <script src="/public/js/script.js"></script>
+    <script>
+        // Script para carregar dados do dashboard
+        document.addEventListener('DOMContentLoaded', function () {
+            // Marcar o menu de dashboard como ativo
+            const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
+            menuItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-menu') === 'dashboard') {
+                    item.classList.add('active');
+                }
+            });
+
+            // Salvar no localStorage que estamos no dashboard
+            localStorage.setItem('activeMenu', 'dashboard');
+
+            // Adicionar funcionalidade de clique nos cards de ação
+            document.querySelectorAll('.dashboard-card').forEach(card => {
+                if (card.getAttribute('onclick')) {
+                    card.style.cursor = 'pointer';
+                }
+            });
+
+            // Carregar dados do dashboard
+            loadDashboardData();
+        });
+
+        function loadDashboardData() {
+            console.log('Loading dashboard data...');
+
+            fetch('../src/controllers/get_dashboard_data.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Dashboard data loaded:', data);
+                    if (data.success) {
+                        updateDashboard(data.data);
+                    } else {
+                        console.error('Error loading dashboard data:', data.error);
+                        showErrorState();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching dashboard data:', error);
+                    showErrorState();
+                });
+        }
+
+        function updateDashboard(data) {
+            // Atualizar informações gerais
+            updateGeneralInfo(data.general_info);
+
+            // Atualizar gráfico de departamentos
+            updateDepartmentChart(data.department_distribution);
+
+            // Atualizar lista de aniversariantes
+            updateBirthdayList(data.upcoming_birthdays);
+        }
+
+        function updateGeneralInfo(generalInfo) {
+            console.log('Updating general info with:', generalInfo);
+
+            // Remover estado de loading
+            document.querySelectorAll('.card-value').forEach(el => {
+                el.classList.remove('loading');
+            });
+
+            // Selecionar TODOS os cards e filtrar pelos que pertencem à General Information
+            const allCards = document.querySelectorAll('.dashboard-card');
+            const generalCards = [];
+
+            allCards.forEach(card => {
+                // Verificar se o card está na seção de General Information
+                const sectionTitle = card.closest('.row')?.previousElementSibling;
+                if (sectionTitle && sectionTitle.classList.contains('section-title') &&
+                    sectionTitle.textContent.includes('General Information')) {
+                    generalCards.push(card);
+                }
+            });
+
+            console.log('General info cards found:', generalCards.length);
+
+            if (generalCards.length >= 4) {
+                // Atualizar na ordem correta
+                generalCards[0].querySelector('.card-value').textContent = generalInfo.total_departments;
+                generalCards[1].querySelector('.card-value').textContent = generalInfo.total_employees;
+                generalCards[2].querySelector('.card-value').textContent = '$' + formatNumber(generalInfo.avg_salary);
+                generalCards[3].querySelector('.card-value').textContent = '$' + formatNumber(generalInfo.total_salary);
+            }
+        }
+
+        function updateDepartmentChart(departmentData) {
+            const barChart = document.getElementById('departmentChart');
+            if (!barChart) return;
+
+            // Limpar dados existentes
+            barChart.innerHTML = '';
+
+            if (!departmentData || departmentData.length === 0) {
+                barChart.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-bar fa-2x text-muted"></i>
+                        <div class="mt-2 text-muted">No department data available</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Encontrar o valor máximo para calcular porcentagens
+            const maxCount = Math.max(...departmentData.map(dept => dept.employee_count));
+
+            // Adicionar cada departamento ao gráfico
+            departmentData.forEach(dept => {
+                const percentage = maxCount > 0 ? (dept.employee_count / maxCount) * 100 : 0;
+
+                const barItem = document.createElement('div');
+                barItem.className = 'bar-item';
+
+                // Definir cores diferentes para cada barra
+                const colors = [
+                    '#3498db', '#2ecc71', '#e74c3c', '#f39c12',
+                    '#9b59b6', '#1abc9c', '#34495e', '#e67e22',
+                    '#16a085', '#27ae60', '#2980b9', '#8e44ad'
+                ];
+                const color = colors[departmentData.indexOf(dept) % colors.length];
+
+                barItem.innerHTML = `
+                    <div class="bar-label">${dept.department_name}</div>
+                    <div class="bar-container">
+                        <div class="bar-fill" style="width: ${percentage}%; background-color: ${color};">
+                            ${dept.employee_count}
+                        </div>
+                    </div>
+                    <div class="bar-count">${dept.employee_count}</div>
+                `;
+
+                barChart.appendChild(barItem);
+            });
+        }
+
+        function updateBirthdayList(birthdayData) {
+            const birthdayContainer = document.getElementById('birthdayList');
+            if (!birthdayContainer) return;
+
+            // Limpar dados existentes
+            birthdayContainer.innerHTML = '';
+
+            if (!birthdayData || birthdayData.length === 0) {
+                birthdayContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-birthday-cake fa-2x text-muted"></i>
+                        <div class="mt-2 text-muted">No upcoming birthdays</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Adicionar cada aniversariante
+            birthdayData.forEach(person => {
+                const birthdayItem = document.createElement('div');
+                birthdayItem.className = 'birthday-item';
+
+                // Gerar iniciais para o avatar
+                const names = person.employee_name.split(' ');
+                const initials = (names[0].charAt(0) + (names[1] ? names[1].charAt(0) : '')).toUpperCase();
+
+                // Calcular dias até o aniversário
+                const daysUntil = person.days_until_birthday;
+
+                let dateText;
+                if (daysUntil === 0) {
+                    dateText = 'Today';
+                } else if (daysUntil === 1) {
+                    dateText = 'Tomorrow';
+                } else {
+                    dateText = `In ${daysUntil} days`;
+                }
+
+                birthdayItem.innerHTML = `
+                    <div class="birthday-avatar">${initials}</div>
+                    <div class="birthday-info">
+                        <div class="birthday-name">${person.employee_name}</div>
+                        <div class="birthday-date">${dateText} - ${person.department_name}</div>
+                    </div>
+                `;
+
+                birthdayContainer.appendChild(birthdayItem);
+            });
+        }
+
+        function formatNumber(number) {
+            return number.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function showErrorState() {
+            console.error('Failed to load dashboard data');
+
+            // Atualizar estado dos cards para mostrar erro
+            document.querySelectorAll('.card-value').forEach(el => {
+                el.classList.remove('loading');
+                el.textContent = 'Error';
+            });
+
+            // Mostrar mensagem de erro no gráfico
+            const barChart = document.getElementById('departmentChart');
+            if (barChart) {
+                barChart.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        <div class="mt-2 text-danger">Failed to load data</div>
+                    </div>
+                `;
+            }
+
+            // Mostrar mensagem de erro na lista de aniversariantes
+            const birthdayContainer = document.getElementById('birthdayList');
+            if (birthdayContainer) {
+                birthdayContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        <div class="mt-2 text-danger">Failed to load data</div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>
