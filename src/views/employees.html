@@ -345,46 +345,47 @@
         $(document).ready(function () {
             const table = $('#employeesTable');
             const tbody = table.find('tbody');
+            let dataTableInstance = null; // Variável para controlar a instância da DataTable
 
             // Estados da tabela
             function showLoadingState() {
                 tbody.html(`
-                <tr>
-                    <td colspan="6">
-                        <div class="loading-state">
-                            <div class="loading-spinner"></div>
-                            <div>Loading employees...</div>
-                        </div>
-                    </td>
-                </tr>
-            `);
+            <tr>
+                <td colspan="6">
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <div>Loading employees...</div>
+                    </div>
+                </td>
+            </tr>
+        `);
             }
 
             function showEmptyState() {
                 tbody.html(`
-                <tr>
-                    <td colspan="6">
-                        <div class="empty-state">
-                            <i class="fas fa-users"></i>
-                            <div>No employees registered in the database.</div>
-                        </div>
-                    </td>
-                </tr>
-            `);
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <div>No employees registered in the database.</div>
+                    </div>
+                </td>
+            </tr>
+        `);
             }
 
             function showErrorState(message) {
                 tbody.html(`
-                <tr>
-                    <td colspan="6">
-                        <div class="error-state">
-                            <i class="fas fa-exclamation-circle"></i>
-                            <div>${message}</div>
-                            <button class="btn btn-primary retry-btn">Try Again</button>
-                        </div>
-                    </td>
-                </tr>
-            `);
+            <tr>
+                <td colspan="6">
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <div>${message}</div>
+                        <button class="btn btn-primary retry-btn">Try Again</button>
+                    </div>
+                </td>
+            </tr>
+        `);
             }
 
             function clearTableBody() {
@@ -401,11 +402,14 @@
                     dataType: 'json',
                     success: function (response) {
                         if (response.employees && response.employees.length > 0) {
-                            clearTableBody();
-                            populateTable(response.employees);
-                            initializeDataTable();
+                            renderTable(response.employees);
                         } else {
                             showEmptyState();
+                            // Se havia uma DataTable, destruir
+                            if (dataTableInstance) {
+                                dataTableInstance.destroy();
+                                dataTableInstance = null;
+                            }
                         }
                     },
                     error: function (xhr, status, error) {
@@ -414,39 +418,60 @@
                             message = xhr.responseJSON.error;
                         }
                         showErrorState(message);
+                        // Se havia uma DataTable, destruir
+                        if (dataTableInstance) {
+                            dataTableInstance.destroy();
+                            dataTableInstance = null;
+                        }
                     }
                 });
+            }
+
+            // Popular tabela com dados e inicializar DataTable
+            function renderTable(employees) {
+                // Destruir DataTable anterior se existir
+                if (dataTableInstance) {
+                    dataTableInstance.destroy();
+                    dataTableInstance = null;
+                }
+
+                // Limpar e popular o tbody
+                clearTableBody();
+                populateTable(employees);
+
+                // Inicializar DataTable
+                initializeDataTable();
             }
 
             // Popular tabela com dados
             function populateTable(employees) {
                 employees.forEach(emp => {
                     const row = `
-                    <tr>
-                        <td>${emp.name}</td>
-                        <td>${emp.age}</td>
-                        <td>${emp.department}</td>
-                        <td>${emp.role}</td>
-                        <td>$${emp.salary}</td>
-                        <td class="text-center">
-                            <div class="table-actions">
-                                <button class="btn btn-sm btn-view" data-id="${emp.id}" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-delete" data-id="${emp.id}" title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                <tr>
+                    <td>${emp.name}</td>
+                    <td>${emp.age}</td>
+                    <td>${emp.department}</td>
+                    <td>${emp.role}</td>
+                    <td>$${emp.salary}</td>
+                    <td class="text-center">
+                        <div class="table-actions">
+                            <button class="btn btn-sm btn-view" data-id="${emp.id}" title="View">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-delete" data-id="${emp.id}" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
                     tbody.append(row);
                 });
             }
 
-            // Inicializar DataTable
+            // Inicializar DataTable;
             function initializeDataTable() {
-                table.DataTable({
+                dataTableInstance = table.DataTable({
                     language: {
                         search: "Search:",
                         lengthMenu: "Show _MENU_ entries",
@@ -464,6 +489,73 @@
                 });
             }
 
+            // Função para deletar funcionário
+            function deleteEmployee(employeeId) {
+                if (confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
+                    // Mostrar loading no botão específico
+                    const deleteBtn = $(`.btn-delete[data-id="${employeeId}"]`);
+                    const originalHtml = deleteBtn.html();
+                    deleteBtn.html('<i class="fas fa-spinner fa-spin"></i>');
+                    deleteBtn.prop('disabled', true);
+
+                    $.ajax({
+                        url: '../controllers/delete_employee.php',
+                        type: 'DELETE',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ id: employeeId }),
+                        dataType: 'json',
+                        success: function (response) {
+                            if (response.success) {
+                                // Recarregar a tabela após deletar
+                                loadEmployees();
+                                // Mostrar mensagem de sucesso
+                                showNotification('Employee deleted successfully!', 'success');
+                            } else {
+                                showNotification('Error: ' + response.error, 'error');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            let message = "An error occurred while deleting the employee.";
+                            if (xhr.responseJSON && xhr.responseJSON.error) {
+                                message = xhr.responseJSON.error;
+                            }
+                            showNotification(message, 'error');
+                        },
+                        complete: function () {
+                            // Restaurar o botão
+                            deleteBtn.html(originalHtml);
+                            deleteBtn.prop('disabled', false);
+                        }
+                    });
+                }
+            }
+
+            // Função auxiliar para mostrar notificações
+            function showNotification(message, type = 'info') {
+                // Aqui você pode implementar um sistema de toast mais sofisticado
+                // Por enquanto, usando alert para simplificar
+                if (type === 'error') {
+                    alert('Error: ' + message);
+                } else {
+                    alert(message);
+                }
+            }
+
+            // Evento para o botão de deletar (usando delegação de eventos)
+            $(document).on('click', '.btn-delete', function (e) {
+                e.preventDefault();
+                const employeeId = $(this).data('id');
+                deleteEmployee(employeeId);
+            });
+
+            // Evento para o botão de visualizar (para futura implementação)
+            $(document).on('click', '.btn-view', function (e) {
+                e.preventDefault();
+                const employeeId = $(this).data('id');
+                // TODO: Implementar visualização/edição
+                showNotification('View functionality for employee ID: ' + employeeId, 'info');
+            });
+
             // Evento para tentar novamente em caso de erro
             $(document).on('click', '.retry-btn', function () {
                 loadEmployees();
@@ -477,7 +569,7 @@
     <!-- Script para garantir que o menu lateral fique ativo (marca "departments") -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Marcar o menu de departamentos como ativo
+            // Marcar o menu de employees como ativo
             const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
             menuItems.forEach(item => {
                 item.classList.remove('active');
@@ -486,7 +578,6 @@
                 }
             });
 
-            // Salvar no localStorage que estamos na página de departamentos
             try {
                 localStorage.setItem('activeMenu', 'employees');
             } catch (e) {

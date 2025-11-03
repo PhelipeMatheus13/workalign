@@ -155,11 +155,20 @@
                             $birthday = $_POST['date_of_birth'] ?? '';
                             $email = $_POST['email'] ?? '';
                             $phone = $_POST['phone1'] ?? '';
-                            $secondPhone = $_POST['phone2'] ?? '';
                             $address = $_POST['address'] ?? '';
                             $salary = $_POST['salary'] ?? '';
                             $departmentId = $_POST['department_id'] ?? '';
                             $roleId = $_POST['role_id'] ?? '';
+
+                            if (!array_key_exists('phone2', $_POST)) {
+                                // campo ausente no request -> NULL
+                                $secondPhone = null;
+                            } else {
+                                // campo presente (pode vir vazio "")
+                                $tmp = trim($_POST['phone2']);
+                                // Recomendação: normalizar string vazia para NULL para evitar multiple empty-string conflicts
+                                $secondPhone = ($tmp === '') ? null : $tmp;
+                            }
 
                             // Validações básicas
                             $errors = [];
