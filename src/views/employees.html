@@ -492,7 +492,6 @@
             // Função para deletar funcionário
             function deleteEmployee(employeeId) {
                 if (confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
-                    // Mostrar loading no botão específico
                     const deleteBtn = $(`.btn-delete[data-id="${employeeId}"]`);
                     const originalHtml = deleteBtn.html();
                     deleteBtn.html('<i class="fas fa-spinner fa-spin"></i>');
@@ -508,7 +507,6 @@
                             if (response.success) {
                                 // Recarregar a tabela após deletar
                                 loadEmployees();
-                                // Mostrar mensagem de sucesso
                                 showNotification('Employee deleted successfully!', 'success');
                             } else {
                                 showNotification('Error: ' + response.error, 'error');
@@ -532,7 +530,6 @@
 
             // Função auxiliar para mostrar notificações
             function showNotification(message, type = 'info') {
-                // Aqui você pode implementar um sistema de toast mais sofisticado
                 // Por enquanto, usando alert para simplificar
                 if (type === 'error') {
                     alert('Error: ' + message);

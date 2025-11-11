@@ -213,9 +213,10 @@
         .create-department-btn-container {
             display: flex;
             justify-content: flex-end;
-            margin-top: 10px;
-            margin-bottom: 20px;
-            margin-right: 6px;
+            margin: 10px auto 20px;
+            max-width: 900px;
+            width: 100%;
+            padding: 0 30px;
         }
 
         /* Remover transição do carrossel */
@@ -279,6 +280,11 @@
 
             .new-department-container {
                 justify-content: center;
+            }
+
+            .create-department-btn-container {
+                padding: 0 20px;
+                margin: 10px auto 15px;
             }
 
             /* Ajustar controles para mobile */
@@ -546,7 +552,7 @@
                     e.stopPropagation();
                     const deptId = this.getAttribute('data-dept-id');
                     if (confirm('Tem certeza que deseja excluir este departamento?')) {
-                        alert(`Departamento ID ${deptId} excluído com sucesso!`);
+                        deleteDepartment(deptId);
                     }
                 });
             });
@@ -558,6 +564,31 @@
                     window.location.href = `departments_roles.html?department_id=${deptId}`;
                 });
             });
+        }
+
+        // Nova função para deletar departamento
+        function deleteDepartment(departmentId) {
+            fetch('../controllers/delete_department.php', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ id: departmentId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Departamento excluído com sucesso!');
+                        // Recarregar a lista de departamentos
+                        loadDepartments();
+                    } else {
+                        alert('Erro ao excluir departamento: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao excluir departamento: ' + error.message);
+                });
         }
 
         // Função auxiliar para prevenir XSS
