@@ -535,35 +535,38 @@
                 wrap: true
             });
         }
-
+       
         function attachEventListeners() {
-            // Botão Editar
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const deptId = this.getAttribute('data-dept-id');
-                    alert(`Funcionalidade de edição para o departamento ID ${deptId} será implementada em breve!`);
+            // Forçar re-anexação dos eventos após um pequeno delay
+            setTimeout(() => {
+                // Botão Editar
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const deptId = this.getAttribute('data-dept-id');
+                        alert(`Funcionalidade de edição para o departamento ID ${deptId} será implementada em breve!`);
+                    });
                 });
-            });
 
-            // Botão Excluir
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    const deptId = this.getAttribute('data-dept-id');
-                    if (confirm('Tem certeza que deseja excluir este departamento?')) {
-                        deleteDepartment(deptId);
-                    }
+                // Botão Excluir
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const deptId = this.getAttribute('data-dept-id');
+                        if (confirm('Tem certeza que deseja excluir este departamento?')) {
+                            deleteDepartment(deptId);
+                        }
+                    });
                 });
-            });
 
-            // Botão View Roles
-            document.querySelectorAll('.view-roles-btn').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const deptId = this.getAttribute('data-dept-id');
-                    window.location.href = `departments_roles.html?department_id=${deptId}`;
+                // Botão View Roles
+                document.querySelectorAll('.view-roles-btn').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const deptId = this.getAttribute('data-dept-id');
+                        window.location.href = `departments_roles.html?department_id=${deptId}`;
+                    });
                 });
-            });
+            }, 150);
         }
 
         // Nova função para deletar departamento

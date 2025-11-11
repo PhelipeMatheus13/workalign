@@ -538,19 +538,18 @@
                 }
             }
 
-            // Evento para o botão de deletar (usando delegação de eventos)
+            // Evento para o botão de deletar 
             $(document).on('click', '.btn-delete', function (e) {
                 e.preventDefault();
                 const employeeId = $(this).data('id');
                 deleteEmployee(employeeId);
             });
 
-            // Evento para o botão de visualizar (para futura implementação)
+            // Evento para o botão de visualizar - redireciona para a página de detalhes do funcionário
             $(document).on('click', '.btn-view', function (e) {
                 e.preventDefault();
                 const employeeId = $(this).data('id');
-                // TODO: Implementar visualização/edição
-                showNotification('View functionality for employee ID: ' + employeeId, 'info');
+                window.location.href = `employee_details.html?id=${employeeId}`;
             });
 
             // Evento para tentar novamente em caso de erro
