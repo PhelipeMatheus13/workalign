@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="stylesheet" href="../../public/css/style.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+   <title>WorkAlign - Edit Role</title>
+   <style>
+      /* --- Ajustes gerais --- */
+      html,
+      body {
+         margin: 0;
+         padding: 0;
+         height: 100%;
+         overflow: hidden;
+         background: #f6f9fb;
+      }
+
+      .container-fluid {
+         padding: 0;
+         height: 100vh;
+      }
+
+      .row {
+         margin: 0;
+         height: 100%;
+      }
+
+      /* Coluna principal */
+      .col-md-9 {
+         height: 100%;
+         padding: 0;
+         display: flex;
+         flex-direction: column;
+         overflow-y: auto;
+      }
+
+      /* Container principal */
+      .content-container {
+         max-width: 800px;
+         width: 100%;
+         margin: 0 auto;
+         padding: 20px;
+      }
+
+      /* Header da página */
+      .page-header {
+         display: flex;
+         justify-content: space-between;
+         align-items: center;
+         margin-bottom: 25px;
+      }
+
+      .page-title {
+         color: #2c3e50;
+         font-weight: 600;
+         font-size: 1.8rem;
+         margin: 0;
+      }
+
+      .header-actions {
+         display: flex;
+         gap: 10px;
+      }
+
+      /* Card de edição da role */
+      .role-card {
+         background: white;
+         border-radius: 10px;
+         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+         padding: 30px;
+      }
+
+      .info-section {
+         margin-bottom: 25px;
+      }
+
+      .section-title {
+         color: #2c3e50;
+         font-weight: 600;
+         font-size: 1.1rem;
+         margin-bottom: 15px;
+         padding-bottom: 8px;
+         border-bottom: 1px solid #e9ecef;
+      }
+
+      .info-item {
+         margin-bottom: 12px;
+      }
+
+      .info-label {
+         color: #6c757d;
+         font-size: 0.85rem;
+         font-weight: 500;
+         margin-bottom: 3px;
+         text-transform: uppercase;
+         letter-spacing: 0.5px;
+      }
+
+      .form-control {
+         border: 1px solid #ced4da;
+         border-radius: 4px;
+         padding: 8px 12px;
+         font-size: 1rem;
+         color: #2c3e50;
+      }
+
+      .form-control:focus {
+         border-color: #007bff;
+         box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
+
+      textarea.form-control {
+         min-height: 120px;
+         resize: vertical;
+      }
+
+      /* Estados de loading e erro */
+      .loading {
+         text-align: center;
+         padding: 40px;
+         color: #6c757d;
+      }
+
+      .loading-spinner {
+         width: 40px;
+         height: 40px;
+         border: 4px solid #f3f3f3;
+         border-top: 4px solid #3498db;
+         border-radius: 50%;
+         animation: spin 1s linear infinite;
+         margin: 0 auto 20px;
+      }
+
+      @keyframes spin {
+         0% {
+            transform: rotate(0deg);
+         }
+
+         100% {
+            transform: rotate(360deg);
+         }
+      }
+
+      .error-message {
+         text-align: center;
+         padding: 20px;
+         color: #dc3545;
+         background-color: #f8d7da;
+         border-radius: 5px;
+         margin: 10px 0;
+      }
+
+      .success-message {
+         text-align: center;
+         padding: 20px;
+         color: #155724;
+         background-color: #d4edda;
+         border-radius: 5px;
+         margin: 10px 0;
+      }
+
+      /* Botões */
+      .btn-back {
+         background-color: #6c757d;
+         border-color: #6c757d;
+         color: white;
+      }
+
+      .btn-save {
+         background-color: #28a745;
+         border-color: #28a745;
+         color: white;
+      }
+
+      .btn-cancel {
+         background-color: #6c757d;
+         border-color: #6c757d;
+         color: white;
+      }
+
+      .btn-sm {
+         padding: 0.5rem 1rem;
+         font-size: 0.9rem;
+         border-radius: 4px;
+      }
+
+      .form-actions {
+         display: flex;
+         gap: 10px;
+         justify-content: flex-end;
+         margin-top: 30px;
+         padding-top: 20px;
+         border-top: 1px solid #e9ecef;
+      }
+
+      /* Ajustes para mobile */
+      @media (max-width: 768px) {
+         .col-md-9 {
+            height: calc(100vh - 56px);
+         }
+
+         .content-container {
+            padding: 15px;
+         }
+
+         .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+         }
+
+         .header-actions {
+            width: 100%;
+            justify-content: space-between;
+         }
+
+         .role-card {
+            padding: 20px;
+         }
+
+         .form-actions {
+            flex-direction: column;
+         }
+      }
+
+      /* -----------------------
+           LAYOUT: fixar menu lateral
+           ----------------------- */
+      @media (min-width: 768px) {
+         .col-md-3.menu {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            height: calc(100vh - 56px);
+            overflow-y: auto;
+            width: 25%;
+            z-index: 1020;
+         }
+
+         .main-content {
+            margin-left: 25%;
+            max-height: calc(100vh - 56px);
+            overflow-y: auto;
+         }
+
+         .container-fluid,
+         .row {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+         }
+      }
+
+      @media (max-width: 767.98px) {
+         .main-content {
+            margin-left: 0;
+         }
+      }
+   </style>
+</head>
+
+<body>
+   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="../../public/index.html">
+         <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
+      </a>
+
+      <!-- Botão do menu mobile -->
+      <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
+         <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Menu mobile (dropdown) -->
+      <div class="collapse navbar-collapse d-md-none" id="navbarMobileMenu">
+         <ul class="navbar-nav">
+            <li class="nav-item">
+               <a class="nav-link" href="../../public/index.html" data-menu="dashboard">
+                  <i class="fas fa-tachometer-alt"></i> Dashboard
+               </a>
+            </li>
+            <li class="nav-item">
+               <a class="nav-link" href="employees.html" data-menu="employees">
+                  <i class="fas fa-users"></i> Employees
+               </a>
+            </li>
+            <li class="nav-item">
+               <a class="nav-link" href="departments.html" data-menu="departments">
+                  <i class="fas fa-briefcase"></i> Departments
+               </a>
+            </li>
+            <li class="nav-item">
+               <a class="nav-link" href="#" data-menu="reports">
+                  <i class="fas fa-chart-bar"></i> Reports
+               </a>
+            </li>
+         </ul>
+      </div>
+   </nav>
+
+   <div class="container-fluid">
+      <div class="row">
+         <!-- MENU LATERAL -->
+         <div class="col-md-3 menu d-none d-md-block">
+            <ul class="menu">
+               <li>
+                  <a href="../../public/index.html" class="menu-item" data-menu="dashboard">
+                     <i class="fas fa-tachometer-alt"></i>
+                     <span>Dashboard</span>
+                  </a>
+               </li>
+               <li>
+                  <a href="employees.html" class="menu-item" data-menu="employees">
+                     <i class="fas fa-users"></i>
+                     <span>Employees</span>
+                  </a>
+               </li>
+               <li>
+                  <a href="departments.html" class="menu-item" data-menu="departments">
+                     <i class="fas fa-briefcase"></i>
+                     <span>Departments</span>
+                  </a>
+               </li>
+               <li>
+                  <a href="#" class="menu-item" data-menu="reports">
+                     <i class="fas fa-chart-bar"></i>
+                     <span>Reports</span>
+                  </a>
+               </li>
+            </ul>
+         </div>
+
+         <!-- CONTEÚDO PRINCIPAL -->
+         <div class="col-md-9 main-content">
+            <div class="content-container">
+               <!-- Header da página -->
+               <div class="page-header">
+                  <h1 class="page-title">Edit Role</h1>
+                  <div class="header-actions">
+                     <a href="departments_roles.html" id="backLink">
+                        <button type="button" class="btn btn-back btn-sm">
+                           <i class="fas fa-arrow-left"></i> Back to Roles
+                        </button>
+                     </a>
+                  </div>
+               </div>
+
+               <!-- Card de edição da role -->
+               <div class="role-card" id="roleCard">
+                  <div class="loading" id="loadingState">
+                     <div class="loading-spinner"></div>
+                     <p>Loading role data...</p>
+                  </div>
+
+                  <form id="roleForm" style="display: none;">
+                     <!-- Informações básicas -->
+                     <div class="info-section">
+                        <h3 class="section-title">Role Information</h3>
+                        <div class="info-item">
+                           <div class="info-label">Role Name *</div>
+                           <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                        <div class="info-item">
+                           <div class="info-label">Description *</div>
+                           <textarea class="form-control" id="description" name="description" rows="4"
+                              required></textarea>
+                        </div>
+                     </div>
+
+                     <!-- Ações do formulário -->
+                     <div class="form-actions">
+                        <button type="button" class="btn btn-cancel btn-sm" id="cancelBtn">
+                           <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-save btn-sm" id="saveBtn">
+                           <i class="fas fa-save"></i> Save Changes
+                        </button>
+                     </div>
+                  </form>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+
+   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+   <script src="../../public/js/script.js"></script>
+   <script>
+      document.addEventListener('DOMContentLoaded', function () {
+         // Menu activation
+         const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
+         menuItems.forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('data-menu') === 'departments') {
+               item.classList.add('active');
+            }
+         });
+
+         localStorage.setItem('activeMenu', 'departments');
+
+         // Get role ID from URL
+         const urlParams = new URLSearchParams(window.location.search);
+         const roleId = urlParams.get('id');
+         const departmentId = urlParams.get('department_id');
+
+         // atualizar o link de voltar dinamicamente
+         document.getElementById('backLink').href = departmentId
+            ? `departments_roles.html?department_id=${departmentId}`
+            : 'departments.html';
+
+         // Update back link to include department_id
+         if (departmentId) {
+            document.getElementById('backLink').href = `departments_roles.html?department_id=${departmentId}`;
+         }
+
+         if (roleId) {
+            loadRoleData(roleId);
+         } else {
+            showError('Role ID is missing in the URL.');
+         }
+
+         // Event listeners
+         document.getElementById('cancelBtn').addEventListener('click', function () {
+            if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
+               if (departmentId) {
+                  window.location.href = `departments_roles.html?department_id=${departmentId}`;
+               } else {
+                  window.location.href = 'departments.html';
+               }
+            }
+         });
+
+         document.getElementById('roleForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            saveRoleChanges();
+         });
+
+         // Load role data
+         function loadRoleData(roleId) {
+            fetch(`../controllers/get_role_by_id.php?id=${roleId}`)
+               .then(response => {
+                  if (!response.ok) {
+                     return response.json().then(errorData => {
+                        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                     });
+                  }
+                  return response.json();
+               })
+               .then(data => {
+                  if (data.success) {
+                     populateRoleForm(data.role);
+                  } else {
+                     throw new Error(data.error || 'Failed to load role data');
+                  }
+               })
+               .catch(error => {
+                  console.error('Error:', error);
+                  showError('Error loading role data: ' + error.message);
+               });
+         }
+
+         // Populate role form
+         function populateRoleForm(role) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('roleForm').style.display = 'block';
+
+            document.getElementById('name').value = role.name || '';
+            document.getElementById('description').value = role.description || '';
+         }
+
+         // Save role changes
+         function saveRoleChanges() {
+            if (!confirm('Are you sure you want to save these changes?')) {
+               return;
+            }
+
+            const form = document.getElementById('roleForm');
+            const formData = new FormData(form);
+            const saveBtn = document.getElementById('saveBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+
+            // Validar dados antes do envio
+            const name = formData.get('name').trim();
+            const description = formData.get('description').trim();
+
+            if (!name) {
+               showError('Please fill in the role name');
+               return;
+            }
+
+            if (!description) {
+               showError('Please fill in the role description');
+               return;
+            }
+
+            const roleData = {
+               id: parseInt(roleId),
+               name: name,
+               description: description
+            };
+
+            const originalSaveText = saveBtn.innerHTML;
+
+            // FEEDBACK VISUAL IMEDIATO 
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Changes...';
+            saveBtn.disabled = true;
+
+            // ESCONDER BOTÃO DE CANCELAR 
+            cancelBtn.style.display = 'none';
+
+            console.log('Sending data:', roleData);
+
+            fetch('../controllers/update_role.php', {
+               method: 'PUT',
+               headers: {
+                  'Content-Type': 'application/json',
+               },
+               body: JSON.stringify(roleData)
+            })
+               .then(response => {
+                  if (!response.ok) {
+                     return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                     });
+                  }
+                  return response.json();
+               })
+               .then(data => {
+                  if (data.success) {
+                     showSuccess('Role updated successfully! Redirecting...');
+
+                     // Redirecionar após breve delay para usuário ver a mensagem
+                     setTimeout(() => {
+                        if (departmentId) {
+                           window.location.href = `departments_roles.html?department_id=${departmentId}`;
+                        } else {
+                           window.location.href = 'departments.html';
+                        }
+                     }, 1500);
+                  } else {
+                     throw new Error(data.error || 'Failed to update role');
+                  }
+               })
+               .catch(error => {
+                  console.error('Error:', error);
+                  let errorMessage = 'Error updating role: ';
+
+                  if (error.message.includes('HTTP 500')) {
+                     errorMessage += 'Server error. Please check the server logs.';
+                  } else if (error.message.includes('HTTP 400')) {
+                     errorMessage += 'Invalid data submitted. Please check all fields.';
+                  } else if (error.message.includes('HTTP 404')) {
+                     errorMessage += 'Role not found.';
+                  } else {
+                     errorMessage += error.message;
+                  }
+
+                  // Restaurar botões em caso de erro
+                  saveBtn.innerHTML = originalSaveText;
+                  saveBtn.disabled = false;
+                  cancelBtn.style.display = 'block'; // Mostrar botão de cancelar novamente
+                  showError(errorMessage);
+               });
+         }
+
+         // Show error message
+         function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            const roleCard = document.getElementById('roleCard');
+            roleCard.innerHTML = `<div class="error-message">${message}</div>`;
+         }
+
+         // Show success message
+         function showSuccess(message) {
+            const roleCard = document.getElementById('roleCard');
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            roleCard.insertBefore(successDiv, roleCard.firstChild);
+         }
+      });
+   </script>
+
+</body>
+
+</html>

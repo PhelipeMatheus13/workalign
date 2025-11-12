@@ -770,7 +770,8 @@
             $('.edit-role-btn').on('click', function (e) {
                 e.stopPropagation();
                 const roleId = $(this).data('role-id');
-                alert(`Edit functionality for role ID ${roleId} will be implemented soon!`);
+                // Passar department_id na URL
+                window.location.href = `edit_role.html?id=${roleId}&department_id=${departmentId}`;
             });
 
             $('.delete-role-btn').on('click', function (e) {

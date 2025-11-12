@@ -9,12 +9,13 @@ try {
             d.id,
             d.name,
             d.description,
-            COUNT(e.id) as employees_count,
-            COALESCE(AVG(e.salary), 0) as avg_salary,
-            COUNT(DISTINCT e.role_id) as roles_count,
-            COALESCE(SUM(e.salary), 0) as monthly_budget
+            COUNT(e.id) AS employees_count,
+            COALESCE(AVG(e.salary), 0) AS avg_salary,
+            COUNT(DISTINCT r.id) AS roles_count,
+            COALESCE(SUM(e.salary), 0) AS monthly_budget
         FROM departments d
-        LEFT JOIN employees e ON d.id = e.department_id AND e.status != "fired"
+        LEFT JOIN roles r ON d.id = r.department_id
+        LEFT JOIN employees e ON e.role_id = r.id AND e.status != "fired"
         GROUP BY d.id, d.name, d.description
         ORDER BY d.name
     ');
