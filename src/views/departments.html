@@ -142,6 +142,7 @@
             border-radius: 6px;
             font-weight: 600;
             transition: background 0.3s ease;
+            cursor: pointer;
         }
 
         .view-more-btn:hover {
@@ -447,7 +448,7 @@
             fetch('../controllers/get_departments.php')
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Erro ao carregar departamentos');
+                        throw new Error('Error loading departments.');
                     }
                     return response.json();
                 })
@@ -462,7 +463,7 @@
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao carregar departamentos: ' + error.message);
+                    alert('Error loading departments.: ' + error.message);
                 });
         }
 
@@ -535,7 +536,8 @@
                 wrap: true
             });
         }
-       
+
+        // No arquivo departments.html, substitua a função attachEventListeners
         function attachEventListeners() {
             // Forçar re-anexação dos eventos após um pequeno delay
             setTimeout(() => {
@@ -544,7 +546,8 @@
                     btn.addEventListener('click', function (e) {
                         e.stopPropagation();
                         const deptId = this.getAttribute('data-dept-id');
-                        alert(`Funcionalidade de edição para o departamento ID ${deptId} será implementada em breve!`);
+                        // Redirecionar para a página de edição
+                        window.location.href = `edit_department.html?id=${deptId}`;
                     });
                 });
 
@@ -553,7 +556,7 @@
                     btn.addEventListener('click', function (e) {
                         e.stopPropagation();
                         const deptId = this.getAttribute('data-dept-id');
-                        if (confirm('Tem certeza que deseja excluir este departamento?')) {
+                        if (confirm('Are you sure you want to delete this department?')) {
                             deleteDepartment(deptId);
                         }
                     });
@@ -581,16 +584,16 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('Departamento excluído com sucesso!');
+                        alert('Department successfully deleted!');
                         // Recarregar a lista de departamentos
                         loadDepartments();
                     } else {
-                        alert('Erro ao excluir departamento: ' + data.error);
+                        alert('Error deleting department: ' + data.error);
                     }
                 })
                 .catch(error => {
                     console.error('Erro:', error);
-                    alert('Erro ao excluir departamento: ' + error.message);
+                    alert('Error deleting department: ' + error.message);
                 });
         }
 
