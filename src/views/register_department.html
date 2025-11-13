@@ -9,10 +9,15 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
     <title>WorkAlign - New department</title>
     <style>
-        /* Garantir que o layout principal ocupe 100vh sem scroll */
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #f6f9fb;
+        }
 
-
-        /* Conteúdo principal com scroll */
         .col-md-9 {
             height: calc(100vh - 56px);
             padding: 20px;
@@ -20,7 +25,6 @@
             background-color: #f8f9fa;
         }
 
-        /* Card do formulário */
         .form-card {
             background: white;
             border-radius: 10px;
@@ -38,7 +42,6 @@
             border-bottom: 1px solid #e9ecef;
         }
 
-        /* Estilos dos campos do formulário */
         .form-group label {
             color: #2c3e50;
             font-weight: 500;
@@ -62,7 +65,6 @@
             resize: vertical;
         }
 
-        /* Botões */
         .form-actions {
             display: flex;
             justify-content: flex-end;
@@ -100,13 +102,11 @@
             border-color: #545b62;
         }
 
-        /* Indicador de campo obrigatório */
         .required::after {
             content: " *";
             color: #e74c3c;
         }
 
-        /* Ajustes para mobile */
         @media (max-width: 768px) {
             .col-md-9 {
                 padding: 10px;
@@ -133,7 +133,7 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
 
-        <!-- Botão do menu mobile -->
+        <!-- Button of menu mobile -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -167,7 +167,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- MENU LATERAL -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -197,33 +197,33 @@
                 </ul>
             </div>
 
-            <!-- CONTEÚDO PRINCIPAL -->
+            <!-- Main content -->
             <div class="col-md-9">
                 <div class="form-card">
                     <h3 class="form-title">Register New Department</h3>
                     <form id="departmentForm" action="../controllers/register_department.php" method="POST">
-                        <!-- Nome do Departamento -->
+                        <!-- Department Name -->
                         <div class="form-group">
                             <label for="department_name" class="required">Name</label>
                             <input type="text" class="form-control" id="department_name" name="department_name"
                                 placeholder="Enter department name" required>
                         </div>
 
-                        <!-- Nome curto do Departamento -->
+                        <!-- Short name -->
                         <div class="form-group">
                             <label for="department_short_name">Short name</label>
                             <input type="text" class="form-control" id="department_short_name"
                                 name="department_short_name" placeholder="Enter department short name (optional)">
                         </div>
 
-                        <!-- Descrição do Departamento -->
+                        <!-- Description -->
                         <div class="form-group">
                             <label for="department_description" class="required">Description</label>
                             <textarea class="form-control" id="department_description" name="department_description"
                                 placeholder="Enter department description" required></textarea>
                         </div>
 
-                        <!-- Status do Departamento -->
+                        <!-- Status -->
                         <div class="form-group">
                             <label for="department_status">Status</label>
                             <select class="form-control" id="department_status" name="department_status">
@@ -233,6 +233,7 @@
                             </select>
                         </div>
 
+                         <!-- Form actions -->
                         <div class="form-actions">
                             <button type="button" class="btn btn-secondary"
                                 onclick="window.history.back()">Cancel</button>
@@ -249,7 +250,6 @@
     <script src="../../public/js/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Marcar o menu de departamentos como ativo
             const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
             menuItems.forEach(item => {
                 item.classList.remove('active');
@@ -258,12 +258,11 @@
                 }
             });
 
-            // Salvar no localStorage que estamos na página de departamentos
             localStorage.setItem('activeMenu', 'departments');
 
-            // Form submission - APENAS VALIDAÇÃO, SEM PREVENT DEFAULT
+            // Form submission - Validation only, no preventative default.
             document.getElementById('departmentForm').addEventListener('submit', function (e) {
-                // Validação dos campos obrigatórios
+                // Validation of required fields
                 const name = document.getElementById('department_name').value;
                 const shortName = document.getElementById('department_short_name').value;
                 const description = document.getElementById('department_description').value;
@@ -274,8 +273,7 @@
                     return false;
                 }
 
-                // Se todos os campos estiverem preenchidos, o formulário será enviado normalmente
-                // para o arquivo PHP sem intervenção do JavaScript
+                // If all fields are filled in, the form will be sent to the PHP file normally without JavaScript intervention.
                 return true;
             });
         });

@@ -10,13 +10,38 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
     <title>WorkAlign - Employees</title>
     <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #f6f9fb;
+        }
+
+        .container-fluid,
+        .row {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .col-md-9 {
+            height: calc(100vh - 56px);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 30px;
+
+        }
+
         .create-employee-btn-container {
             display: flex;
             justify-content: flex-end;
             margin-bottom: 20px;
         }
 
-        /* Botões com cores padronizadas */
         .btn-create {
             background-color: #007bff;
             border-color: #007bff;
@@ -41,7 +66,6 @@
             border-radius: 4px;
         }
 
-        /* Tabela de funcionários - IDÊNTICA ao departments_roles.html */
         .employees-section {
             margin-top: 40px;
         }
@@ -87,7 +111,6 @@
             justify-content: center;
         }
 
-        /* Estilos para loading e estados vazios */
         .loading {
             text-align: center;
             padding: 40px;
@@ -130,42 +153,6 @@
             margin: 10px 0;
         }
 
-        /* -----------------------
-           LAYOUT: fixar menu lateral
-           ----------------------- */
-        @media (min-width: 768px) {
-            .col-md-3.menu {
-                position: fixed;
-                top: 56px;
-                left: 0;
-                height: calc(100vh - 56px);
-                overflow-y: auto;
-                width: 25%;
-                z-index: 1020;
-            }
-
-            .main-content {
-                margin-left: 25%;
-                max-height: calc(100vh - 56px);
-                overflow-y: auto;
-                padding: 30px;
-            }
-
-            .container-fluid,
-            .row {
-                width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-        }
-
-        @media (max-width: 767.98px) {
-            .main-content {
-                margin-left: 0;
-            }
-        }
-
-        /* Estados da tabela - melhorados */
         .loading-state,
         .empty-state,
         .error-state {
@@ -193,14 +180,12 @@
             color: #dc3545;
         }
 
-        /* Garantir que as mensagens ocupem toda a largura */
         #employeesTable tbody td[colspan="6"] {
             padding: 0 !important;
             border: none !important;
             text-align: center;
         }
 
-        /* Loading spinner */
         .loading-spinner {
             width: 40px;
             height: 40px;
@@ -221,7 +206,6 @@
             }
         }
 
-        /* Botão de tentar novamente */
         .retry-btn {
             font-size: 0.9rem;
             padding: 0.5rem 1rem;
@@ -235,7 +219,7 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
 
-        <!-- Botão do menu mobile -->
+        <!-- Button of menu mobile -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -269,7 +253,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- MENU LATERAL -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -299,9 +283,9 @@
                 </ul>
             </div>
 
-            <!-- CONTEÚDO PRINCIPAL -->
+            <!-- Main content -->
             <div class="col-md-9 main-content">
-                <!-- Botão Create New Employee -->
+                <!-- Create New Employee -->
                 <div class="create-employee-btn-container">
                     <a href="register_employee.html">
                         <button type="button" class="btn btn-primary btn-sm btn-create">
@@ -310,7 +294,7 @@
                     </a>
                 </div>
 
-                <!-- Lista de Funcionários -->
+                <!-- List of employees-->
                 <div class="employees-section">
                     <div class="table-container">
                         <h3 class="section-title">Employees</h3>
@@ -326,7 +310,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Dados serão preenchidos dinamicamente pelo JavaScript -->
+                                <!-- Dynamic data -->
                             </tbody>
                         </table>
                     </div>
@@ -342,12 +326,26 @@
     <script src="../../public/js/script.js"></script>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Marcar o menu de employees como ativo
+            const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
+            menuItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-menu') === 'employees') {
+                    item.classList.add('active');
+                }
+            });
+
+            localStorage.setItem('activeMenu', 'employees');
+
+        });
+
         $(document).ready(function () {
             const table = $('#employeesTable');
             const tbody = table.find('tbody');
-            let dataTableInstance = null; // Variável para controlar a instância da DataTable
+            let dataTableInstance = null; // Variable to control the DataTable instance.
 
-            // Estados da tabela
+            // Table states
             function showLoadingState() {
                 tbody.html(`
             <tr>
@@ -392,7 +390,7 @@
                 tbody.empty();
             }
 
-            // Carregar funcionários
+            // Load employees from API
             function loadEmployees() {
                 showLoadingState();
 
@@ -405,7 +403,7 @@
                             renderTable(response.employees);
                         } else {
                             showEmptyState();
-                            // Se havia uma DataTable, destruir
+                            // If there was a DataTable, destroy it.
                             if (dataTableInstance) {
                                 dataTableInstance.destroy();
                                 dataTableInstance = null;
@@ -418,7 +416,6 @@
                             message = xhr.responseJSON.error;
                         }
                         showErrorState(message);
-                        // Se havia uma DataTable, destruir
                         if (dataTableInstance) {
                             dataTableInstance.destroy();
                             dataTableInstance = null;
@@ -427,24 +424,23 @@
                 });
             }
 
-            // Popular tabela com dados e inicializar DataTable
+            // Populate the table with data and initialize the DataTable.
             function renderTable(employees) {
-                // Destruir DataTable anterior se existir
                 if (dataTableInstance) {
                     dataTableInstance.destroy();
                     dataTableInstance = null;
                 }
 
-                // Limpar e popular o tbody
+                // Clean and populate the tbody
                 clearTableBody();
                 populateTable(employees);
 
-                // Inicializar DataTable
                 initializeDataTable();
             }
 
-            // Popular tabela com dados
+            // Popular table with data
             function populateTable(employees) {
+                // Loop through employees and create rows
                 employees.forEach(emp => {
                     const row = `
                 <tr>
@@ -469,7 +465,7 @@
                 });
             }
 
-            // Inicializar DataTable;
+            // Initialize DataTable;
             function initializeDataTable() {
                 dataTableInstance = table.DataTable({
                     language: {
@@ -484,12 +480,11 @@
                         }
                     },
                     columnDefs: [
-                        { orderable: false, targets: 5 } // Desativar ordenação na coluna de ações
+                        { orderable: false, targets: 5 } // Disable sorting in the actions column.
                     ]
                 });
             }
 
-            // Função para deletar funcionário
             function deleteEmployee(employeeId) {
                 if (confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
                     const deleteBtn = $(`.btn-delete[data-id="${employeeId}"]`);
@@ -505,7 +500,7 @@
                         dataType: 'json',
                         success: function (response) {
                             if (response.success) {
-                                // Recarregar a tabela após deletar
+                                // Reload the table after deleting.
                                 loadEmployees();
                                 showNotification('Employee deleted successfully!', 'success');
                             } else {
@@ -520,7 +515,7 @@
                             showNotification(message, 'error');
                         },
                         complete: function () {
-                            // Restaurar o botão
+                            // Restore the button
                             deleteBtn.html(originalHtml);
                             deleteBtn.prop('disabled', false);
                         }
@@ -528,9 +523,7 @@
                 }
             }
 
-            // Função auxiliar para mostrar notificações
             function showNotification(message, type = 'info') {
-                // Por enquanto, usando alert para simplificar
                 if (type === 'error') {
                     alert('Error: ' + message);
                 } else {
@@ -538,47 +531,26 @@
                 }
             }
 
-            // Evento para o botão de deletar 
+            // Button delete event
             $(document).on('click', '.btn-delete', function (e) {
                 e.preventDefault();
                 const employeeId = $(this).data('id');
                 deleteEmployee(employeeId);
             });
 
-            // Evento para o botão de visualizar - redireciona para a página de detalhes do funcionário
+            // Event for the view button - redirects to the employee details page.
             $(document).on('click', '.btn-view', function (e) {
                 e.preventDefault();
                 const employeeId = $(this).data('id');
                 window.location.href = `employee_details.html?id=${employeeId}`;
             });
 
-            // Evento para tentar novamente em caso de erro
+            // Event to retry in case of error.
             $(document).on('click', '.retry-btn', function () {
                 loadEmployees();
             });
 
-            // Iniciar carregamento dos funcionários
             loadEmployees();
-        });
-    </script>
-
-    <!-- Script para garantir que o menu lateral fique ativo (marca "departments") -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Marcar o menu de employees como ativo
-            const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-            menuItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('data-menu') === 'employees') {
-                    item.classList.add('active');
-                }
-            });
-
-            try {
-                localStorage.setItem('activeMenu', 'employees');
-            } catch (e) {
-                // se localStorage for impossível (ex: modo privativo), ignoramos silenciosamente
-            }
         });
     </script>
 </body>

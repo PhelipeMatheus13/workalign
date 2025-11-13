@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
             exit;
         }
 
-        // Verificar se existem funcionários no departamento
+        // Check if there are employees in the department.
         $check_employees = "SELECT COUNT(*) as employee_count FROM employees WHERE department_id = :id";
         $stmt_check = $pdo->prepare($check_employees);
         $stmt_check->bindParam(':id', $department_id, PDO::PARAM_INT);

@@ -9,7 +9,6 @@
    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
    <title>WorkAlign - Edit Employee</title>
    <style>
-      /* --- Ajustes gerais --- */
       html,
       body {
          margin: 0;
@@ -29,16 +28,14 @@
          height: 100%;
       }
 
-      /* Coluna principal */
       .col-md-9 {
-         height: 100%;
+         height: calc(100vh - 56px);
          padding: 0;
          display: flex;
          flex-direction: column;
          overflow-y: auto;
       }
 
-      /* Container principal */
       .content-container {
          max-width: 800px;
          width: 100%;
@@ -46,7 +43,6 @@
          padding: 20px;
       }
 
-      /* Header da página */
       .page-header {
          display: flex;
          justify-content: space-between;
@@ -66,7 +62,6 @@
          gap: 10px;
       }
 
-      /* Card de edição do funcionário */
       .employee-card {
          background: white;
          border-radius: 10px;
@@ -74,7 +69,6 @@
          padding: 30px;
       }
 
-      /* Grid de informações compacto */
       .info-grid-compact {
          display: grid;
          grid-template-columns: repeat(2, 1fr);
@@ -122,7 +116,6 @@
          box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
       }
 
-      /* Estados de loading e erro */
       .loading {
          text-align: center;
          padding: 40px;
@@ -167,7 +160,6 @@
          margin: 10px 0;
       }
 
-      /* Botões */
       .btn-back {
          background-color: #6c757d;
          border-color: #6c757d;
@@ -201,7 +193,6 @@
          border-top: 1px solid #e9ecef;
       }
 
-      /* Ajustes para mobile */
       @media (max-width: 768px) {
          .col-md-9 {
             height: calc(100vh - 56px);
@@ -236,40 +227,6 @@
             flex-direction: column;
          }
       }
-
-      /* -----------------------
-           LAYOUT: fixar menu lateral
-           ----------------------- */
-      @media (min-width: 768px) {
-         .col-md-3.menu {
-            position: fixed;
-            top: 56px;
-            left: 0;
-            height: calc(100vh - 56px);
-            overflow-y: auto;
-            width: 25%;
-            z-index: 1020;
-         }
-
-         .main-content {
-            margin-left: 25%;
-            max-height: calc(100vh - 56px);
-            overflow-y: auto;
-         }
-
-         .container-fluid,
-         .row {
-            width: 100%;
-            margin: 0;
-            padding: 0;
-         }
-      }
-
-      @media (max-width: 767.98px) {
-         .main-content {
-            margin-left: 0;
-         }
-      }
    </style>
 </head>
 
@@ -279,7 +236,7 @@
          <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
       </a>
 
-      <!-- Botão do menu mobile -->
+      <!-- Butoon of menu mobile -->
       <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
          <span class="navbar-toggler-icon"></span>
       </button>
@@ -313,7 +270,7 @@
 
    <div class="container-fluid">
       <div class="row">
-         <!-- MENU LATERAL -->
+         <!-- Side menu -->
          <div class="col-md-3 menu d-none d-md-block">
             <ul class="menu">
                <li>
@@ -343,10 +300,9 @@
             </ul>
          </div>
 
-         <!-- CONTEÚDO PRINCIPAL -->
+         <!-- Main content -->
          <div class="col-md-9 main-content">
             <div class="content-container">
-               <!-- Header da página -->
                <div class="page-header">
                   <h1 class="page-title">Edit Employee</h1>
                   <div class="header-actions">
@@ -358,7 +314,7 @@
                   </div>
                </div>
 
-               <!-- Card de edição do funcionário -->
+               <!-- Employee editing card -->
                <div class="employee-card" id="employeeCard">
                   <div class="loading" id="loadingState">
                      <div class="loading-spinner"></div>
@@ -366,7 +322,7 @@
                   </div>
 
                   <form id="employeeForm" style="display: none;">
-                     <!-- Informações pessoais -->
+                     <!-- Personal information -->
                      <div class="info-section">
                         <h3 class="section-title">Personal Information</h3>
                         <div class="info-grid-compact">
@@ -397,7 +353,7 @@
                         </div>
                      </div>
 
-                     <!-- Informações profissionais -->
+                     <!-- Professional Information -->
                      <div class="info-section">
                         <h3 class="section-title">Professional Information</h3>
                         <div class="info-grid-compact">
@@ -427,7 +383,7 @@
                         </div>
                      </div>
 
-                     <!-- Endereço (linha completa) -->
+                     <!-- Address -->
                      <div class="info-section">
                         <h3 class="section-title">Address</h3>
                         <div class="info-item">
@@ -435,7 +391,7 @@
                         </div>
                      </div>
 
-                     <!-- Ações do formulário -->
+                     <!-- Form actions -->
                      <div class="form-actions">
                         <button type="button" class="btn btn-cancel btn-sm" id="cancelBtn">
                            <i class="fas fa-times"></i> Cancel
@@ -456,18 +412,6 @@
    <script src="../../public/js/script.js"></script>
    <script>
       document.addEventListener('DOMContentLoaded', function () {
-         // Menu activation
-         const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-         menuItems.forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-menu') === 'employees') {
-               item.classList.add('active');
-            }
-         });
-
-         localStorage.setItem('activeMenu', 'employees');
-
-         // Get employee ID from URL
          const urlParams = new URLSearchParams(window.location.search);
          const employeeId = urlParams.get('id');
          let currentEmployeeData = null;
@@ -480,7 +424,6 @@
             showError('Employee ID is missing in the URL.');
          }
 
-         // Event listeners
          document.getElementById('cancelBtn').addEventListener('click', function () {
             if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
                window.location.href = `employee_details.html?id=${employeeId}`;
@@ -639,7 +582,7 @@
             const saveBtn = document.getElementById('saveBtn');
             const cancelBtn = document.getElementById('cancelBtn');
 
-            // Validar dados antes do envio
+            // Validate data before sending
             const salary = parseFloat(formData.get('salary'));
             if (isNaN(salary) || salary < 0) {
                showError('Please enter a valid salary amount');
@@ -659,7 +602,7 @@
                return;
             }
 
-            // TRATAMENTO CONSISTENTE DO SECONDARY_PHONE 
+            // Handle optional secondary phone
             const secondaryPhoneValue = formData.get('secondary_phone');
             let secondaryPhone;
             if (secondaryPhoneValue === null || secondaryPhoneValue === undefined) {
@@ -682,7 +625,7 @@
                role_id: roleId
             };
 
-            // Apenas adicionar secondary_phone se não for undefined
+            // Only add secondary_phone if it is not undefined.
             if (secondaryPhone !== undefined) {
                employeeData.secondary_phone = secondaryPhone;
             }
@@ -695,11 +638,11 @@
 
             const originalSaveText = saveBtn.innerHTML;
 
-            // FEEDBACK VISUAL IMEDIATO 
+            // Immediate feedback
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Changes...';
             saveBtn.disabled = true;
 
-            // ESCONDER BOTÃO DE CANCELAR 
+            // Hide the cancel button after confirming changes. 
             cancelBtn.style.display = 'none';
 
             console.log('Sending data:', employeeData);
@@ -721,10 +664,9 @@
                })
                .then(data => {
                   if (data.success) {
-                     // Mostrar mensagem de sucesso
                      showSuccess('Employee updated successfully! Redirecting...');
 
-                     // Redirecionar após breve delay para usuário ver a mensagem
+                     // Redirect after a brief 3-second delay.
                      setTimeout(() => {
                         window.location.href = `employee_details.html?id=${employeeId}`;
                      }, 1500);
@@ -744,10 +686,10 @@
                      errorMessage += error.message;
                   }
 
-                  // Restaurar botões em caso de erro
+                  // Restore buttons in case of error.
                   saveBtn.innerHTML = originalSaveText;
                   saveBtn.disabled = false;
-                  cancelBtn.style.display = 'block'; // Mostrar botão de cancelar novamente
+                  cancelBtn.style.display = 'block'; 
                   showError(errorMessage);
                });
          }
@@ -764,14 +706,12 @@
             return `${year}-${month}-${day}`;
          }
 
-         // Show error message
          function showError(message) {
             document.getElementById('loadingState').style.display = 'none';
             const employeeCard = document.getElementById('employeeCard');
             employeeCard.innerHTML = `<div class="error-message">${message}</div>`;
          }
 
-         // Show success message
          function showSuccess(message) {
             const employeeCard = document.getElementById('employeeCard');
             const successDiv = document.createElement('div');

@@ -1,5 +1,4 @@
 <?php
-// get_departments.php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../config/database.php';
 
@@ -22,7 +21,7 @@ try {
     
     $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Formatar os números
+    // Format the numbers
     foreach ($departments as &$dept) {
         $dept['avg_salary'] = number_format($dept['avg_salary'], 2, '.', ',');
         $dept['monthly_budget'] = number_format($dept['monthly_budget'], 2, '.', ',');

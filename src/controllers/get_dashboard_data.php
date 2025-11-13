@@ -1,10 +1,6 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-// REMOVA temporariamente para debug
-// ini_set('display_errors', 0);
-// error_reporting(0);
 
-// ADICIONE para ver erros
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -14,7 +10,7 @@ try {
         throw new Exception('Database connection not established');
     }
 
-    // Dados gerais
+    // General data
     $generalQuery = "
         SELECT 
             (SELECT COUNT(*) FROM departments WHERE status = 'active') as total_departments,
@@ -27,7 +23,7 @@ try {
     $stmt->execute();
     $generalData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Distribuição por departamento
+    // Distribution by department
     $deptQuery = "
         SELECT 
             CASE 
@@ -46,7 +42,7 @@ try {
     $stmt->execute();
     $departmentData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Próximos aniversariantes
+    // Upcoming birthday celebrants
     $birthdayQuery = "
         SELECT 
             CONCAT(e.first_name, ' ', e.last_name) as employee_name,
@@ -77,7 +73,7 @@ try {
     $stmt->execute();
     $birthdayData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Processar os dados
+    // Process the data
     $response = [
         'success' => true,
         'data' => [

@@ -6,9 +6,8 @@
     <link rel="stylesheet" href="../../public/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
-    <title>WorkAlign - new department</title>
+    <title>WorkAlign - New department</title>
     <style>        
-            /* Conteúdo principal centralizado */
             .col-md-9 {
                 height: calc(100vh - 56px);
                 padding: 20px;
@@ -72,7 +71,7 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
         
-        <!-- Botão do menu mobile -->
+        <!-- Button of menu mobile -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -106,7 +105,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- MENU LATERAL -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -136,27 +135,24 @@
                 </ul>
             </div>
             
-            <!-- CONTEÚDO PRINCIPAL -->
+            <!-- Main content -->
             <div class="col-md-9">
                 <div class="alert-container">
                     <?php
-                        // Habilitar exibição de erros para debug (remover em produção)
                         error_reporting(E_ALL);
                         ini_set('display_errors', 1);
                         
                         require_once "../../config/database.php";
                         
-                        // Verificar se o formulário foi submetido
+                        // Check if the form has been submitted.
                         if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             
-                            // Coletar dados
                             $name = $_POST['department_name'] ?? '';
                             $shortName = $_POST['department_short_name'] ?? '';
                             $description = $_POST['department_description'] ?? '';
                             $status = $_POST['department_status'] ?? 'active';
 
                             try {
-                                // Preparar e executar a query usando PDO
                                 $sql = "INSERT INTO `departments` (`name`, `short_name`, `description`, `status`) 
                                         VALUES (:name, :short_name, :description, :status)";
                                 $stmt = $pdo->prepare($sql);
@@ -174,7 +170,6 @@
                                 echo '</div>';
                                 echo '<a href="../views/departments.html" class="btn btn-primary btn-back">Back to Departments</a>';
                                 
-                                // Redirecionar automaticamente após 3 segundos (reduzido de 10 para melhor UX)
                                 echo '<script>setTimeout(function() { window.location.href = "../views/departments.html"; }, 3000);</script>';
                             } catch (PDOException $e) {
                                 echo '<div class="alert alert-danger">';
@@ -203,9 +198,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
     <script src="../../public/js/script.js"></script>
     <script>
-        // Script para garantir que o menu lateral fique ativo
         document.addEventListener('DOMContentLoaded', function() {
-            // Marcar o menu de departamentos como ativo
             const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
             menuItems.forEach(item => {
                 item.classList.remove('active');
@@ -214,7 +207,6 @@
                 }
             });
             
-            // Salvar no localStorage que estamos na página de departamentos
             localStorage.setItem('activeMenu', 'departments');
         });
     </script>

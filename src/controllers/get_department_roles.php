@@ -1,14 +1,13 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
-// Desativar exibição de erros para não poluir o JSON
-ini_set('display_errors', 0);
-error_reporting(0);
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 try {
     require_once __DIR__ . '/../../config/database.php';
     
-    // Verificar se a conexão foi estabelecida
+    // Check if the connection was established
     if (!isset($pdo)) {
         throw new Exception('Database connection not established');
     }
@@ -20,7 +19,7 @@ try {
         exit;
     }
 
-    // Busca departamento
+    // Search department
     $st = $pdo->prepare('SELECT id, name FROM departments WHERE id = ? LIMIT 1');
     $st->execute([$department_id]);
     $department = $st->fetch(PDO::FETCH_ASSOC);
@@ -31,7 +30,7 @@ try {
         exit;
     }
 
-    // Busca funções relacionadas com estatísticas básicas
+    // Search for functions related to basic statistics.
     $st = $pdo->prepare('
         SELECT
             r.id,

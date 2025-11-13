@@ -1,11 +1,9 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
-// Para debug, vamos ativar temporariamente a exibição de erros
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Handle PUT request
 $method = $_SERVER['REQUEST_METHOD'];
 if ($method !== 'PUT') {
     http_response_code(405);
@@ -77,12 +75,12 @@ try {
     }
 
     if (!array_key_exists('secondary_phone', $input)) {
-        // campo ausente no request -> NULL
+        // missing field in request -> NULL
         $secondaryPhone = null;
     } else {
-        // campo presente (pode vir vazio "")
+        // present field (may be empty "")
         $tmp = trim($input['secondary_phone']);
-        // Normalizar string vazia para NULL para evitar conflitos
+        // Normalize empty strings to NULL to avoid conflicts.
         $secondaryPhone = ($tmp === '') ? null : $tmp;
     }
 

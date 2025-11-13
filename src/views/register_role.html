@@ -9,9 +9,6 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
     <title>WorkAlign - New Role</title>
     <style>
-        /* Garantir que o layout principal ocupe 100vh sem scroll */
-
-        /* Conteúdo principal com scroll */
         .col-md-9 {
             height: calc(100vh - 56px);
             padding: 20px;
@@ -19,7 +16,6 @@
             background-color: #f8f9fa;
         }
 
-        /* Card do formulário */
         .form-card {
             background: white;
             border-radius: 10px;
@@ -37,7 +33,6 @@
             border-bottom: 1px solid #e9ecef;
         }
 
-        /* Estilos dos campos do formulário */
         .form-group label {
             color: #2c3e50;
             font-weight: 500;
@@ -99,13 +94,11 @@
             border-color: #545b62;
         }
 
-        /* Indicador de campo obrigatório */
         .required::after {
             content: " *";
             color: #e74c3c;
         }
 
-        /* Ajustes para mobile */
         @media (max-width: 768px) {
             .col-md-9 {
                 padding: 10px;
@@ -132,7 +125,7 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
 
-        <!-- Botão do menu mobile -->
+        <!-- Button of menu mobile -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -166,7 +159,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- MENU LATERAL -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -196,23 +189,23 @@
                 </ul>
             </div>
 
-            <!-- CONTEÚDO PRINCIPAL -->
+            <!-- Main content -->
             <div class="col-md-9">
                 <div class="form-card">
                     <h3 class="form-title">Register New Role</h3>
                     <form id="roleForm" action="../controllers/register_role.php" method="POST">
 
-                        <!-- Campo hidden para department_id -->
+                        <!-- Hidden field for department_id -->
                         <input type="hidden" name="department_id" id="department_id">
 
-                        <!-- Nome da função -->
+                        <!-- Role name -->
                         <div class="form-group">
                             <label for="role_name" class="required">Name</label>
                             <input type="text" class="form-control" id="role_name" name="role_name"
                                 placeholder="Enter role name" required>
                         </div>
 
-                        <!-- Descrição da função -->
+                        <!-- Role description -->
                         <div class="form-group">
                             <label for="role_description" class="required">Description</label>
                             <textarea class="form-control" id="role_description" name="role_description"
@@ -235,7 +228,6 @@
     <script src="../../public/js/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Marcar o menu de departamentos como ativo
             const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
             menuItems.forEach(item => {
                 item.classList.remove('active');
@@ -244,10 +236,9 @@
                 }
             });
 
-            // Salvar no localStorage que estamos na página de departamentos
             localStorage.setItem('activeMenu', 'departments');
 
-            // Capturar department_id da URL
+            // Capture department_id from URL
             const urlParams = new URLSearchParams(window.location.search);
             const departmentId = urlParams.get('department_id');
 
@@ -264,9 +255,9 @@
                 return;
             }
 
-            // Validação do formulário de role (CORRIGIDO - estava departmentForm)
+
             document.getElementById('roleForm').addEventListener('submit', function (e) {
-                // Validação dos campos obrigatórios
+                // Validation of required fields
                 const name = document.getElementById('role_name').value;
                 const description = document.getElementById('role_description').value;
                 const departmentId = document.getElementById('department_id').value;

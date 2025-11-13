@@ -9,11 +9,10 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
     <title>WorkAlign - dashboard</title>
     <style>
-        /* Garantir que o layout principal ocupe 100vh sem scroll */
         html,
         body {
             height: 100%;
-            overflow: hidden;
+            overflow: hidden;   /* Prevent body scroll */
             margin: 0;
             padding: 0;
         }
@@ -25,15 +24,13 @@
             padding: 0;
         }
 
-        /* Conteúdo principal com scroll */
         .col-md-9 {
             height: calc(100vh - 56px);
             padding: 25px;
-            overflow-y: auto;
+            overflow-y: auto; /* Enable vertical scrolling */
             background-color: #f8f9fa;
         }
 
-        /* Títulos das seções */
         .section-title {
             font-weight: 500;
             color: #7f8c8d;
@@ -44,7 +41,6 @@
             border-bottom: 1px solid #eaeaea;
         }
 
-        /* Cards padronizados */
         .dashboard-card {
             background: white;
             border-radius: 12px;
@@ -58,7 +54,7 @@
             border: 1px solid #f0f0f0;
         }
 
-        .dashboard-card:hover {
+        .quick-action-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
         }
@@ -107,7 +103,6 @@
             color: #7f8c8d;
         }
 
-        /* Gráficos */
         .chart-container {
             background: white;
             border-radius: 12px;
@@ -126,7 +121,6 @@
             font-size: 1.1rem;
         }
 
-        /* Gráfico de barras customizado */
         .bar-chart {
             display: flex;
             flex-direction: column;
@@ -177,7 +171,6 @@
             font-size: 0.9rem;
         }
 
-        /* Lista de aniversariantes */
         .birthday-list {
             background: white;
             border-radius: 12px;
@@ -237,7 +230,6 @@
             color: #7f8c8d;
         }
 
-        /* Botões */
         .btn-more {
             background-color: #3498db;
             color: white;
@@ -256,7 +248,6 @@
             background-color: #2980b9;
         }
 
-        /* Layout das seções */
         .section-container {
             min-height: 100vh;
             display: flex;
@@ -273,7 +264,6 @@
             flex: 0 0 auto;
         }
 
-        /* Estados de loading */
         .loading {
             opacity: 0.7;
         }
@@ -284,7 +274,6 @@
             color: #7f8c8d;
         }
 
-        /* Ajustes para telas intermediárias (tablets e laptops menores) */
         @media (max-width: 1250px) and (min-width: 992px) {
             .dashboard-card {
                 height: 180px;
@@ -366,7 +355,6 @@
             }
         }
 
-        /* Ajustes para mobile */
         @media (max-width: 768px) {
             .col-md-9 {
                 padding: 15px;
@@ -386,12 +374,12 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
 
-        <!-- Botão do menu mobile -->
+        <!-- Button of menu mobile -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Menu mobile (dropdown) -->
+        <!-- Mobile menu (dropdown) -->
         <div class="collapse navbar-collapse d-md-none" id="navbarMobileMenu">
             <ul class="navbar-nav">
                 <li class="nav-item">
@@ -420,7 +408,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- MENU LATERAL -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -450,17 +438,16 @@
                 </ul>
             </div>
 
-            <!-- CONTEÚDO PRINCIPAL -->
+            <!-- Main content -->
             <div class="col-md-9">
                 <div class="section-container">
-                    <!-- Seção superior com ações rápidas e informações gerais -->
                     <div class="top-section">
-                        <!-- Cards de Quick Actions -->
+                        <!-- Quick action cards -->
                         <div>
                             <h5 class="section-title">Quick Actions</h5>
                             <div class="row">
                                 <div class="col-md-3">
-                                    <div class="dashboard-card"
+                                    <div class="dashboard-card quick-action-card"
                                         onclick="window.location.href='../src/views/register_employee.html'">
                                         <div class="card-header">
                                             <div class="card-icon" style="background-color: #3498db;">
@@ -474,7 +461,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="dashboard-card"
+                                    <div class="dashboard-card quick-action-card"
                                         onclick="window.location.href='../src/views/register_department.html'">
                                         <div class="card-header">
                                             <div class="card-icon" style="background-color: #2ecc71;">
@@ -488,7 +475,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="dashboard-card" onclick="window.location.href='../src/views/employees.html'">
+                                    <div class="dashboard-card quick-action-card" onclick="window.location.href='../src/views/employees.html'">
                                         <div class="card-header">
                                             <div class="card-icon" style="background-color: #e74c3c;">
                                                 <i class="fas fa-search"></i>
@@ -501,7 +488,7 @@
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="dashboard-card" onclick="window.location.href='#'">
+                                    <div class="dashboard-card quick-action-card" onclick="window.location.href='#'">
                                         <div class="card-header">
                                             <div class="card-icon" style="background-color: #f39c12;">
                                                 <i class="fas fa-chart-bar"></i>
@@ -516,7 +503,7 @@
                             </div>
                         </div>
 
-                        <!-- Cards de General Information -->
+                        <!-- General information cards -->
                         <div>
                             <h5 class="section-title">General Information</h5>
                             <div class="row">
@@ -580,14 +567,14 @@
                         </div>
                     </div>
 
-                    <!-- Seção de gráficos e aniversariantes -->
+                    <!-- Charts and birthdays section -->
                     <div class="charts-section">
                         <div class="row mt-4">
                             <div class="col-md-8">
                                 <div class="chart-container">
                                     <div class="chart-title">Employees by Department</div>
                                     <div class="bar-chart" id="departmentChart">
-                                        <!-- Dados serão carregados dinamicamente via JavaScript -->
+                                        <!-- Data will be loaded dynamically via JavaScript -->
                                         <div class="text-center py-5">
                                             <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
                                             <div class="mt-2 text-muted">Loading department data...</div>
@@ -599,7 +586,7 @@
                                 <div class="birthday-list">
                                     <div class="chart-title">Upcoming Birthdays</div>
                                     <div class="birthday-items-container" id="birthdayList">
-                                        <!-- Dados serão carregados dinamicamente via JavaScript -->
+                                        <!-- Data will be loaded dynamically via JavaScript  -->
                                         <div class="text-center py-5">
                                             <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
                                             <div class="mt-2 text-muted">Loading birthday data...</div>
@@ -619,9 +606,8 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
     <script src="/public/js/script.js"></script>
     <script>
-        // Script para carregar dados do dashboard
         document.addEventListener('DOMContentLoaded', function () {
-            // Marcar o menu de dashboard como ativo
+            // Mark the panel menu as active.
             const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
             menuItems.forEach(item => {
                 item.classList.remove('active');
@@ -630,17 +616,16 @@
                 }
             });
 
-            // Salvar no localStorage que estamos no dashboard
+            // Save to localStorage
             localStorage.setItem('activeMenu', 'dashboard');
 
-            // Adicionar funcionalidade de clique nos cards de ação
-            document.querySelectorAll('.dashboard-card').forEach(card => {
+            // Add click functionality to action cards
+            document.querySelectorAll('.quick-action-card').forEach(card => {
                 if (card.getAttribute('onclick')) {
                     card.style.cursor = 'pointer';
                 }
             });
 
-            // Carregar dados do dashboard
             loadDashboardData();
         });
 
@@ -670,30 +655,28 @@
         }
 
         function updateDashboard(data) {
-            // Atualizar informações gerais
             updateGeneralInfo(data.general_info);
 
-            // Atualizar gráfico de departamentos
             updateDepartmentChart(data.department_distribution);
 
-            // Atualizar lista de aniversariantes
             updateBirthdayList(data.upcoming_birthdays);
         }
 
+        // TODO: Refactor for better maintainability.
         function updateGeneralInfo(generalInfo) {
             console.log('Updating general info with:', generalInfo);
 
-            // Remover estado de loading
+            // Remove loading state
             document.querySelectorAll('.card-value').forEach(el => {
                 el.classList.remove('loading');
             });
 
-            // Selecionar TODOS os cards e filtrar pelos que pertencem à General Information
+            // Select ALL cards and filter by those belonging to General Information.
             const allCards = document.querySelectorAll('.dashboard-card');
             const generalCards = [];
 
             allCards.forEach(card => {
-                // Verificar se o card está na seção de General Information
+                // Check if the card is in the General Information section
                 const sectionTitle = card.closest('.row')?.previousElementSibling;
                 if (sectionTitle && sectionTitle.classList.contains('section-title') &&
                     sectionTitle.textContent.includes('General Information')) {
@@ -704,7 +687,7 @@
             console.log('General info cards found:', generalCards.length);
 
             if (generalCards.length >= 4) {
-                // Atualizar na ordem correta
+                // Update in the correct order.
                 generalCards[0].querySelector('.card-value').textContent = generalInfo.total_departments;
                 generalCards[1].querySelector('.card-value').textContent = generalInfo.total_employees;
                 generalCards[2].querySelector('.card-value').textContent = '$' + formatNumber(generalInfo.avg_salary);
@@ -716,7 +699,7 @@
             const barChart = document.getElementById('departmentChart');
             if (!barChart) return;
 
-            // Limpar dados existentes
+            // Clear existing data
             barChart.innerHTML = '';
 
             if (!departmentData || departmentData.length === 0) {
@@ -729,17 +712,17 @@
                 return;
             }
 
-            // Encontrar o valor máximo para calcular porcentagens
+            // Find the maximum value for calculating percentages.
             const maxCount = Math.max(...departmentData.map(dept => dept.employee_count));
 
-            // Adicionar cada departamento ao gráfico
+            // Add each department to the chart.
             departmentData.forEach(dept => {
                 const percentage = maxCount > 0 ? (dept.employee_count / maxCount) * 100 : 0;
 
                 const barItem = document.createElement('div');
                 barItem.className = 'bar-item';
 
-                // Definir cores diferentes para cada barra
+                // Define different colors for each bar.
                 const colors = [
                     '#3498db', '#2ecc71', '#e74c3c', '#f39c12',
                     '#9b59b6', '#1abc9c', '#34495e', '#e67e22',
@@ -765,7 +748,7 @@
             const birthdayContainer = document.getElementById('birthdayList');
             if (!birthdayContainer) return;
 
-            // Limpar dados existentes
+            
             birthdayContainer.innerHTML = '';
 
             if (!birthdayData || birthdayData.length === 0) {
@@ -778,16 +761,15 @@
                 return;
             }
 
-            // Adicionar cada aniversariante
             birthdayData.forEach(person => {
                 const birthdayItem = document.createElement('div');
                 birthdayItem.className = 'birthday-item';
 
-                // Gerar iniciais para o avatar
+                // Generate initials for the avatar
                 const names = person.employee_name.split(' ');
                 const initials = (names[0].charAt(0) + (names[1] ? names[1].charAt(0) : '')).toUpperCase();
 
-                // Calcular dias até o aniversário
+                // Calculate the days until the birthday.
                 const daysUntil = person.days_until_birthday;
 
                 let dateText;
@@ -821,13 +803,13 @@
         function showErrorState() {
             console.error('Failed to load dashboard data');
 
-            // Atualizar estado dos cards para mostrar erro
+            // Update card status to show error.
             document.querySelectorAll('.card-value').forEach(el => {
                 el.classList.remove('loading');
                 el.textContent = 'Error';
             });
 
-            // Mostrar mensagem de erro no gráfico
+            // Display error message in graph
             const barChart = document.getElementById('departmentChart');
             if (barChart) {
                 barChart.innerHTML = `
@@ -838,7 +820,7 @@
                 `;
             }
 
-            // Mostrar mensagem de erro na lista de aniversariantes
+            // Display error message in the birthday list
             const birthdayContainer = document.getElementById('birthdayList');
             if (birthdayContainer) {
                 birthdayContainer.innerHTML = `
@@ -849,7 +831,7 @@
                 `;
             }
         }
-    </script>
+    </script> 
 </body>
 
 </html>

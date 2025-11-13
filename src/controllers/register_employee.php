@@ -6,9 +6,8 @@
     <link rel="stylesheet" href="../../public/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
-    <title>WorkAlign - new department</title>
+    <title>WorkAlign - New department</title>
     <style>        
-         /* Conteúdo principal centralizado */
          .col-md-9 {
                height: calc(100vh - 56px);
                padding: 20px;
@@ -72,7 +71,7 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
         
-        <!-- Botão do menu mobile -->
+        <!-- Button of menu mobile -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -106,7 +105,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- MENU LATERAL -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -136,20 +135,17 @@
                 </ul>
             </div>
             
-            <!-- CONTEÚDO PRINCIPAL -->
+            <!-- Main content -->
             <div class="col-md-9">
                 <div class="alert-container">
                     <?php
-                        // Habilitar exibição de erros para debug 
                         error_reporting(E_ALL);
                         ini_set('display_errors', 1);
                         
                         require_once "../../config/database.php";
                         
-                        // Verificar se o formulário foi submetido
                         if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             
-                            // Coletar dados
                             $firstName = $_POST['first_name'] ?? '';
                             $lastName = $_POST['last_name'] ?? '';
                             $birthday = $_POST['date_of_birth'] ?? '';
@@ -161,16 +157,16 @@
                             $roleId = $_POST['role_id'] ?? '';
 
                             if (!array_key_exists('phone2', $_POST)) {
-                                // campo ausente no request -> NULL
+                                // missing field in request -> NULL
                                 $secondPhone = null;
                             } else {
-                                // campo presente (pode vir vazio "")
+                                // present field (may be empty "")
                                 $tmp = trim($_POST['phone2']);
-                                // Recomendação: normalizar string vazia para NULL para evitar multiple empty-string conflicts
+                                // Normalize empty strings to NULL to avoid multiple empty-string conflicts.
                                 $secondPhone = ($tmp === '') ? null : $tmp;
                             }
 
-                            // Validações básicas
+                            // Validations
                             $errors = [];
                             if (empty($firstName)) $errors[] = "First name is required";
                             if (empty($lastName)) $errors[] = "Last name is required";
@@ -197,14 +193,12 @@
                             }
 
                             try {   
-                                // Preparar e executar a query usando PDO
                                 $sql = "INSERT INTO `employees` (`first_name`, `last_name`, `birthday`, `email`, `phone_number`, 
                                                                 `second_phone_number`, `address`, `salary`, `department_id`, `role_id`) 
                                         VALUES (:firstName, :lastName, :birthday, :email, :phone, :secondPhone, :employeeAddress, :salary, :departmentId, :roleId)";
                                 
                                 $stmt = $pdo->prepare($sql);
                                 
-                                // Executar com todos os parâmetros necessários
                                 $stmt->execute([
                                     ':firstName' => $firstName,
                                     ':lastName' => $lastName,
@@ -225,7 +219,6 @@
                                 echo '</div>';
                                 echo '<a href="../views/employees.html" class="btn btn-primary btn-back">Back to Employees</a>';
                                 
-                                // Redirecionar automaticamente após 3 segundos
                                 echo '<script>setTimeout(function() { window.location.href = "../views/employees.html"; }, 3000);</script>';
                                 
                             } catch (PDOException $e) {
@@ -255,9 +248,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
     <script src="../../public/js/script.js"></script>
     <script>
-        // Script para garantir que o menu lateral fique ativo
         document.addEventListener('DOMContentLoaded', function() {
-            // Marcar o menu de employees como ativo
             const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
             menuItems.forEach(item => {
                 item.classList.remove('active');
@@ -266,7 +257,6 @@
                 }
             });
             
-            // Salvar no localStorage que estamos na página de employees
             localStorage.setItem('activeMenu', 'employees');
         });
     </script>

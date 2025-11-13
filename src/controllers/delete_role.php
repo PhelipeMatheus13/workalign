@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
             exit;
         }
 
-        // Verificar se existem funcionários dentro do cargo
+        // Check if there are employees within the position.
         $check_employees = "SELECT COUNT(*) as employee_count FROM employees WHERE role_id = :id";
         $stmt_check = $pdo->prepare($check_employees);
         $stmt_check->bindParam(':id', $role_id, PDO::PARAM_INT);

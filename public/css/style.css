@@ -1,7 +1,12 @@
-/* MENU LATERAL - Estrutura original corrigida */
+.col-md-9 {
+    padding: 25px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 56px);
+}
+
 .col-md-3.menu {
     padding: 0;
-    height: calc(100vh - 56px); /* Altura total menos a navbar */
+    height: calc(100vh - 56px); 
     background: #2c3e50;
 }
 
@@ -27,7 +32,6 @@
     border-bottom: none;
 }
 
-/* Botões padronizados - mantendo o estilo profissional */
 .menu-item {
     display: flex;
     align-items: center;
@@ -53,7 +57,6 @@
     text-align: center;
 }
 
-/* Hover suave */
 .menu-item:hover {
     background: rgba(255,255,255,0.1);
     color: white;
@@ -61,14 +64,12 @@
     padding-left: 30px;
 }
 
-/* Estado ativo */
 .menu-item.active {
     background: rgba(255,255,255,0.15);
     border-left: 4px solid #2ecc71;
     color: #ecf0f1;
 }
 
-/* Cores dos ícones */
 .menu-item[data-menu="employees"] i { color: white; }
 .menu-item[data-menu="departments"] i { color:white; }
 .menu-item[data-menu="reports"] i { color: white; }
@@ -77,14 +78,12 @@
     color: #2ecc71;
 }
 
-/* MOBILE - esconder menu lateral */
 @media (max-width: 768px) {
     .col-md-3.menu {
         display: none;
     }
 }
 
-/* Menu mobile na navbar */
 #navbarMobileMenu {
     position: absolute;
     top: 56px;
@@ -106,7 +105,6 @@
     text-align: center;
 }
 
-/* Esconder menu lateral em mobile */
 .d-none.d-md-block.menu {
     display: none;
 }
@@ -116,15 +114,8 @@
         display: block !important;
     }
     
-    /* Esconder menu mobile em desktop */
     #navbarMobileMenu {
         display: none !important;
     }
 }
 
-/* Estilos globais para o conteúdo principal */
-.col-md-9 {
-    padding: 25px;
-    background-color: #f8f9fa;
-    min-height: calc(100vh - 56px);
-}

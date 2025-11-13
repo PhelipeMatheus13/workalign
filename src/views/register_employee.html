@@ -44,7 +44,7 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
         
-        <!-- Botão do menu mobile -->
+        <!-- Button of menu mobile -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -78,7 +78,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- MENU LATERAL -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -108,7 +108,7 @@
                 </ul>
             </div>
 
-            <!-- CONTEÚDO PRINCIPAL -->
+            <!-- Main content -->
             <div class="col-md-9">
                 <div class="row">
                     <div class="col-md card-employees">
@@ -191,11 +191,9 @@
     <script src="../../public/js/script.js"></script>
   
     <script>
-        // Script específico para garantir que o menu de employees fique ativo
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Register employee page loaded - setting active menu');
             
-            // Forçar o menu employees como ativo
             const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
             menuItems.forEach(item => {
                 item.classList.remove('active');
@@ -204,22 +202,19 @@
                 }
             });
             
-            // Salvar no localStorage que estamos em employees
             localStorage.setItem('activeMenu', 'employees');
 
-            // Carregar departamentos e funções
             loadDepartmentsAndRoles();
         });
 
-        // Variável global para armazenar os dados
+        // Global variable for storing the data
         let departmentsData = [];
 
-        // Carregar departamentos e funções do servidor
+        // Load server departments and functions
         function loadDepartmentsAndRoles() {
             const departmentSelect = document.getElementById('department');
             const roleSelect = document.getElementById('role');
             
-            // Mostrar estado de carregamento
             showLoadingState();
 
             console.log('Starting to load departments and roles...');
@@ -252,7 +247,7 @@
                 });
         }
 
-        // Mostrar estado de carregamento
+        // Show state of loading
         function showLoadingState() {
             const departmentSelect = document.getElementById('department');
             const roleSelect = document.getElementById('role');
@@ -266,14 +261,14 @@
             roleSelect.disabled = true;
         }
 
-        // Preencher select de departamentos
+        // Fill in the department selection form.
         function populateDepartmentSelect() {
             const departmentSelect = document.getElementById('department');
             
-            // Limpar options anteriores
+            // Clear previous options
             departmentSelect.innerHTML = '<option value="">Select Department</option>';
             
-            // Adicionar cada departamento
+            // Add each department
             departmentsData.forEach(dept => {
                 const option = document.createElement('option');
                 option.value = dept.department_id;
@@ -286,7 +281,7 @@
             console.log('Department select populated with', departmentsData.length, 'options');
         }
 
-        // Mostrar estado vazio 
+        // Show empty state
         function showEmptyState() {
             const departmentSelect = document.getElementById('department');
             const roleSelect = document.getElementById('role');
@@ -304,7 +299,7 @@
             console.log('Empty state shown - no departments with roles found');
         }
 
-        // Mostrar estado de erro
+        // Show error state
         function showErrorState() {
             const departmentSelect = document.getElementById('department');
             const roleSelect = document.getElementById('role');
@@ -327,11 +322,11 @@
             const roleSelect = document.getElementById('role');
             const selectedDeptId = this.value;
             
-            // Limpar options anteriores
+            // Clear previous options
             roleSelect.innerHTML = '<option value="">Select Role</option>';
             
             if (selectedDeptId) {
-                // Habilitar e popular o select de roles
+                // Enable and populate the role selection.
                 roleSelect.disabled = false;
                 
                 const selectedOption = this.options[this.selectedIndex];
@@ -351,13 +346,13 @@
                     console.log('No roles found for selected department');
                 }
             } else {
-                // Desabilitar se nenhum departamento selecionado
+                // Disable if no department is selected.
                 roleSelect.disabled = true;
                 roleSelect.innerHTML = '<option value="">Select department first</option>';
             }
         });
 
-        // Validação do formulário antes do envio
+        // Validate the form before submitting.
         document.getElementById('employeeForm').addEventListener('submit', function(e) {
             const departmentId = document.getElementById('department').value;
             const roleId = document.getElementById('role').value;
@@ -368,7 +363,6 @@
                 return;
             }
             
-            // Validação adicional pode ser adicionada aqui
             console.log('Form submitted with department_id:', departmentId, 'and role_id:', roleId);
         });
     </script>

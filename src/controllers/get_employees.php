@@ -1,14 +1,12 @@
 <?php 
 header('Content-Type: application/json; charset=utf-8');
 
-// Desativar exibição de erros para não poluir o JSON
-ini_set('display_errors', 0);
-error_reporting(0);
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 try {
    require_once __DIR__ . '/../../config/database.php';
    
-   // Verificar se a conexão foi estabelecida
    if (!isset($pdo)) {
       throw new Exception('Database connection not established');
    }
@@ -31,21 +29,19 @@ try {
    $st->execute();
    $employees = $st->fetchAll(PDO::FETCH_ASSOC);
 
-   // Calcular idade e formatar dados
+   // Calculate age and format data.
    foreach ($employees as &$emp) {
-      // Calcular idade a partir da data de nascimento
+      // Calculate age from date of birth
       $birthday = new DateTime($emp['birthday']);
       $today = new DateTime();
       $age = $today->diff($birthday)->y;
       $emp['age'] = $age;
 
-      // Formatar nome completo
       $emp['name'] = $emp['first_name'];
 
-      // Formatar salário
       $emp['salary'] = number_format(($emp['salary'] ?? 0), 2, '.', ',');
 
-      // Verifica se existe um short_name do departamento
+      // Checks if a department short_name exists.
       if (!empty($emp['department_short_name'])) {
          $emp['department'] = $emp['department_short_name'];
       } else {
@@ -54,7 +50,6 @@ try {
 
       $emp['role'] = $emp['role_name'];
 
-      // Remover campos que não serão usados no frontend
       unset($emp['first_name'],  $emp['birthday'], $emp['department_short_name'], $emp['department_name'], $emp['role_name']);
    }
    unset($emp);

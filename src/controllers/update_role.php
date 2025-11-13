@@ -42,7 +42,7 @@ try {
         exit;
     }
 
-    // Verificar se a role existe
+    // Check if the role exists.
     $check_stmt = $pdo->prepare('SELECT id FROM roles WHERE id = ?');
     $check_stmt->execute([$role_id]);
     if (!$check_stmt->fetch()) {
@@ -65,7 +65,7 @@ try {
         exit;
     }
 
-    // Verificar se já existe outra role com o mesmo nome (excluindo a atual)
+    // Check if another role with the same name already exists (excluding the current one).
     $check_duplicate_stmt = $pdo->prepare('
         SELECT id FROM roles 
         WHERE name = :name AND id != :id

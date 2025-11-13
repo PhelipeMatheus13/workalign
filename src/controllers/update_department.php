@@ -42,7 +42,7 @@ try {
         exit;
     }
 
-    // Verificar se o departamento existe
+    // Check if the department exists.
     $check_stmt = $pdo->prepare('SELECT id FROM departments WHERE id = ?');
     $check_stmt->execute([$department_id]);
     if (!$check_stmt->fetch()) {
@@ -65,7 +65,6 @@ try {
         exit;
     }
 
-    // Validar descrição (obrigatória)
     $description = trim($input['description']);
     if (empty($description)) {
         http_response_code(400);
@@ -73,10 +72,10 @@ try {
         exit;
     }
 
-    // Processar short_name (opcional)
+    // Process short_name (optional)
     $short_name = isset($input['short_name']) ? trim($input['short_name']) : '';
 
-    // Verificar se já existe outro departamento com o mesmo nome (excluindo o atual)
+    // Check if another department with the same name already exists (excluding the current one).
     $check_duplicate_stmt = $pdo->prepare('
         SELECT id FROM departments 
         WHERE name = :name AND id != :id
@@ -92,7 +91,7 @@ try {
         exit;
     }
 
-    // Verificar se já existe outro departamento com o mesmo short_name (apenas se não for vazio)
+    // Check if another department already exists with the same short_name (only if it's not empty).
     if (!empty($short_name)) {
         $check_short_name_stmt = $pdo->prepare('
             SELECT id FROM departments 
@@ -110,7 +109,7 @@ try {
         }
     }
 
-    // Atualizar o departamento
+    // Update the department
     $update_stmt = $pdo->prepare('
         UPDATE departments SET 
             name = :name,

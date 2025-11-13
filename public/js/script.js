@@ -1,14 +1,11 @@
-// script.js
 $(document).ready(function () {
     console.log('Script.js loaded - initializing menu system');
     
-    // Inicializar DataTable se a tabela existir
     if ($('#employees-table').length) {
         $('#employees-table').DataTable();
         console.log('DataTable initialized for employees table');
     }
 
-    // Seleciona itens de ambos os menus
     const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
     console.log('Found menu items: ', menuItems.length);
 
@@ -20,7 +17,6 @@ $(document).ready(function () {
         elements.forEach(el => el.classList.add('active'));
     }
 
-    // Determinar a página atual baseada na URL
     function getCurrentPage() {
         const path = window.location.pathname;
         const page = path.split('/').pop();
@@ -29,7 +25,7 @@ $(document).ready(function () {
         if (page === 'employees.html' || page === 'register_employee.html') return 'employees';
         if (page === 'departments.html' || page === 'register_department.html') return 'departments';
         if (page === 'index.html' || page === '') return 'dashboard';
-        return 'dashboard'; // padrão
+        return 'dashboard'; 
     }
 
     const saved = localStorage.getItem('activeMenu');
@@ -38,7 +34,6 @@ $(document).ready(function () {
     console.log('Saved menu from localStorage: ', saved);
     console.log('Current page detected: ', currentPage);
     
-    // Prioridade: usar o saved se existir, senão usar currentPage
     const menuToActivate = saved || currentPage;
     console.log('Menu to activate: ', menuToActivate);
     
@@ -52,12 +47,10 @@ $(document).ready(function () {
             localStorage.setItem('activeMenu', key);
             setActive(key);
             
-            // Fechar menu mobile após clique
             if ($('#navbarMobileMenu').length) {
                 $('#navbarMobileMenu').collapse('hide');
             }
             
-            // Navegar para a página se não for a mesma
             const href = this.getAttribute('href');
             if (href && href !== '#' && href !== window.location.pathname) {
                 window.location.href = href;

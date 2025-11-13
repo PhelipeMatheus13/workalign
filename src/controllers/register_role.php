@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
     <title>WorkAlign - New Role</title>
     <style>
-        /* Conteúdo principal centralizado */
         .col-md-9 {
             height: calc(100vh - 56px);
             padding: 20px;
@@ -66,7 +65,6 @@
             margin-bottom: 5px;
         }
 
-        /* Ajustes para mobile */
         @media (max-width: 768px) {
             .col-md-9 {
                 padding: 10px;
@@ -89,7 +87,7 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
 
-        <!-- Botão do menu mobile -->
+        <!-- Button of menu mobile -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -123,7 +121,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- MENU LATERAL -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -153,25 +151,21 @@
                 </ul>
             </div>
 
-            <!-- CONTEÚDO PRINCIPAL -->
+            <!-- Main content -->
             <div class="col-md-9">
                <div class="alert-container">
                   <?php
-                  // Habilitar exibição de erros para debug (remover em produção)
                   error_reporting(E_ALL);
                   ini_set('display_errors', 1);
 
                   require_once "../../config/database.php";
 
-                  // Verificar se o formulário foi submetido
                   if ($_SERVER["REQUEST_METHOD"] == "POST") {
                      
-                     // Coletar dados
                      $name = $_POST['role_name'] ?? '';
                      $description = $_POST['role_description'] ?? '';
                      $department_id = $_POST['department_id'] ?? '';
 
-                     // Validar se department_id existe
                      if (empty($department_id)) {
                         echo '<div class="alert alert-danger">';
                         echo '<div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>';
@@ -183,7 +177,6 @@
                      }
 
                      try {
-                         // Preparar e executar a query usando PDO
                          $sql = "INSERT INTO `roles` (`name`, `description`, `department_id`) 
                                  VALUES (:name, :description, :department_id)";
                          $stmt = $pdo->prepare($sql);
@@ -199,10 +192,9 @@
                          echo '<div class="alert-message">Role <strong>' . htmlspecialchars($name) . '</strong> successfully registered!</div>';
                          echo '</div>';
                          
-                         // Botão para voltar para a página do departamento com o ID correto
+                         // Button to return to the department page with the correct ID.
                          echo '<a href="../views/departments_roles.html?department_id=' . $department_id . '" class="btn btn-primary btn-back">Back to Roles</a>';
                          
-                         // Redirecionar automaticamente após 3 segundos
                          echo '<script>setTimeout(function() { window.location.href = "../views/departments_roles.html?department_id=' . $department_id . '"; }, 3000);</script>';
                      } catch (PDOException $e) {
                          echo '<div class="alert alert-danger">';
@@ -220,7 +212,7 @@
                      echo '<div class="alert-message">Invalid request method.</div>';
                      echo '</div>';
                      
-                     // Tentar obter department_id da referência ou usar valor padrão
+                     // Try to get the department_id from the reference or use the default value.
                      $department_id = isset($_GET['department_id']) ? $_GET['department_id'] : '';
                      if ($department_id) {
                         echo '<a href="../views/departments_roles.html?department_id=' . $department_id . '" class="btn btn-primary btn-back">Back to Roles</a>';
@@ -239,7 +231,6 @@
     <script src="../../public/js/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Marcar o menu de departamentos como ativo
             const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
             menuItems.forEach(item => {
                 item.classList.remove('active');
@@ -248,7 +239,6 @@
                 }
             });
 
-            // Salvar no localStorage que estamos na página de departamentos
             localStorage.setItem('activeMenu', 'departments');
         });
     </script>

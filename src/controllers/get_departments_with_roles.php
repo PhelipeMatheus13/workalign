@@ -1,17 +1,17 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-ini_set('display_errors', 0);
-error_reporting(0);
+
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 try {
-    // Corrigir o caminho do database.php
     require_once __DIR__ . '/../../config/database.php';
     
     if (!isset($pdo)) {
         throw new Exception('Database connection not established');
     }
 
-    // Buscar departamentos que tenham pelo menos uma função atrelada
+    // Look for departments that have at least one function associated with them.
     $query = "
         SELECT DISTINCT 
             d.id AS department_id,
@@ -27,7 +27,7 @@ try {
     $stmt->execute();
     $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Para cada departamento, buscar suas funções
+    // For each department, identify its functions.
     $result = [];
     foreach ($departments as $dept) {
         $rolesQuery = "
@@ -43,7 +43,7 @@ try {
         $rolesStmt->execute([':department_id' => $dept['department_id']]);
         $roles = $rolesStmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Usar short_name se disponível, senão usar o nome completo
+        // Use short_name if available, otherwise use the full name.
         $displayName = !empty($dept['department_short_name']) 
             ? $dept['department_short_name'] 
             : $dept['department_name'];

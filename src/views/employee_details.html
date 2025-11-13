@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
     <title>WorkAlign - Employee Details</title>
     <style>
-        /* --- Ajustes gerais --- */
         html,
         body {
             margin: 0;
@@ -29,16 +28,14 @@
             height: 100%;
         }
 
-        /* Coluna principal */
         .col-md-9 {
-            height: 100%;
+            height: calc(100vh - 56px);
             padding: 0;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
         }
 
-        /* Container principal */
         .content-container {
             max-width: 800px;
             width: 100%;
@@ -46,7 +43,6 @@
             padding: 20px;
         }
 
-        /* Header da página */
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -66,7 +62,6 @@
             gap: 10px;
         }
 
-        /* Card de detalhes do funcionário */
         .employee-card {
             background: white;
             border-radius: 10px;
@@ -74,7 +69,6 @@
             padding: 30px;
         }
 
-        /* Grid de informações compacto */
         .info-grid-compact {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -118,7 +112,6 @@
             font-style: italic;
         }
 
-        /* Estados de loading e erro */
         .loading {
             text-align: center;
             padding: 40px;
@@ -154,7 +147,6 @@
             margin: 10px 0;
         }
 
-        /* Botões */
         .btn-back {
             background-color: #6c757d;
             border-color: #6c757d;
@@ -173,7 +165,6 @@
             border-radius: 4px;
         }
 
-        /* Ajustes para mobile */
         @media (max-width: 768px) {
             .col-md-9 {
                 height: calc(100vh - 56px);
@@ -204,40 +195,6 @@
                 padding: 20px;
             }
         }
-
-        /* -----------------------
-           LAYOUT: fixar menu lateral
-           ----------------------- */
-        @media (min-width: 768px) {
-            .col-md-3.menu {
-                position: fixed;
-                top: 56px;
-                left: 0;
-                height: calc(100vh - 56px);
-                overflow-y: auto;
-                width: 25%;
-                z-index: 1020;
-            }
-
-            .main-content {
-                margin-left: 25%;
-                max-height: calc(100vh - 56px);
-                overflow-y: auto;
-            }
-
-            .container-fluid,
-            .row {
-                width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-        }
-
-        @media (max-width: 767.98px) {
-            .main-content {
-                margin-left: 0;
-            }
-        }
     </style>
 </head>
 
@@ -247,7 +204,7 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
 
-        <!-- Botão do menu mobile -->
+        <!-- Button of menu mobile -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -281,7 +238,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- MENU LATERAL -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -311,10 +268,9 @@
                 </ul>
             </div>
 
-            <!-- CONTEÚDO PRINCIPAL -->
+            <!-- Main content -->
             <div class="col-md-9 main-content">
                 <div class="content-container">
-                    <!-- Header da página -->
                     <div class="page-header">
                         <h1 class="page-title">Employee Details</h1>
                         <div class="header-actions">
@@ -329,7 +285,7 @@
                         </div>
                     </div>
 
-                    <!-- Card de detalhes do funcionário -->
+                    <!-- Employee details card -->
                     <div class="employee-card" id="employeeCard">
                         <div class="loading" id="loadingState">
                             <div class="loading-spinner"></div>
@@ -337,7 +293,7 @@
                         </div>
 
                         <div id="employeeContent" style="display: none;">
-                            <!-- Informações pessoais -->
+                            <!-- Personal Information -->
                             <div class="info-section">
                                 <h3 class="section-title">Personal Information</h3>
                                 <div class="info-grid-compact">
@@ -368,7 +324,7 @@
                                 </div>
                             </div>
 
-                            <!-- Informações profissionais -->
+                            <!-- Professional Information -->
                             <div class="info-section">
                                 <h3 class="section-title">Professional Information</h3>
                                 <div class="info-grid-compact">
@@ -391,7 +347,7 @@
                                 </div>
                             </div>
 
-                            <!-- Endereço (linha completa) -->
+                            <!-- Address -->
                             <div class="info-section">
                                 <h3 class="section-title">Address</h3>
                                 <div class="info-item">
@@ -410,19 +366,6 @@
     <script src="../../public/js/script.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Marcar o menu de employees como ativo
-            const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-            menuItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('data-menu') === 'employees') {
-                    item.classList.add('active');
-                }
-            });
-
-            // Salvar no localStorage que estamos na página de employees
-            localStorage.setItem('activeMenu', 'employees');
-
-            // Obter ID do funcionário da URL
             const urlParams = new URLSearchParams(window.location.search);
             const employeeId = urlParams.get('id');
 
@@ -432,7 +375,7 @@
                 showError('Employee ID is missing in the URL.');
             }
 
-            // Botão de editar - redireciona para a página de edição
+            // Edit button 
             document.getElementById('editEmployeeBtn').addEventListener('click', function () {
                 if (employeeId) {
                     window.location.href = `edit_employee.html?id=${employeeId}`;
@@ -441,7 +384,7 @@
                 }
             });
 
-            // Função para carregar dados do funcionário
+            // Function to load employee data.
             function loadEmployeeData(employeeId) {
                 fetch(`../controllers/get_employee_by_id.php?id=${employeeId}`)
                     .then(response => {
@@ -463,13 +406,13 @@
                     });
             }
 
-            // Função para preencher os dados do funcionário
+            // Function to fill in employee data.
             function populateEmployeeData(employee) {
-                // Esconder loading e mostrar conteúdo
+                // Hide loading screen and show content.
                 document.getElementById('loadingState').style.display = 'none';
                 document.getElementById('employeeContent').style.display = 'block';
 
-                // Preencher dados pessoais
+                // Fill in personal details
                 document.getElementById('firstName').textContent = employee.first_name || '-';
                 document.getElementById('lastName').textContent = employee.last_name || '-';
                 document.getElementById('dateOfBirth').textContent = formatDate(employee.date_of_birth) || '-';
@@ -485,7 +428,7 @@
                     secondaryPhone.classList.add('empty');
                 }
 
-                // Preencher dados profissionais
+                // Fill in professional details
                 document.getElementById('department').textContent = employee.department_name || '-';
                 document.getElementById('role').textContent = employee.role_name || '-';
                 document.getElementById('salary').textContent = employee.salary ? `$${parseFloat(employee.salary).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
@@ -493,18 +436,17 @@
                 document.getElementById('address').textContent = employee.address || '-';
             }
 
-            // Função para mostrar erro
             function showError(message) {
                 document.getElementById('loadingState').style.display = 'none';
                 const employeeCard = document.getElementById('employeeCard');
                 employeeCard.innerHTML = `<div class="error-message">${message}</div>`;
             }
 
-            // Função para formatar data (de YYYY-MM-DD para DD/MM/YYYY)
+            // Function to format dates (from YYYY-MM-DD to DD/MM/YYYY)
             function formatDate(dateString) {
                 if (!dateString) return '';
                 const date = new Date(dateString);
-                if (isNaN(date.getTime())) return dateString; // Retorna original se não for data válida
+                if (isNaN(date.getTime())) return dateString; // Returns to the original date if it is not a valid date.
 
                 const day = String(date.getDate()).padStart(2, '0');
                 const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -512,18 +454,19 @@
                 return `${day}/${month}/${year}`;
             }
 
-            // Função para formatar telefone
+            // TODO: Refactor
+            // Function to format phone
             function formatPhone(phone) {
                 if (!phone) return '';
-                // Remove caracteres não numéricos
+                // Remove non-numeric characters
                 const cleaned = phone.replace(/\D/g, '');
 
-                // Formata para (XXX) XXX-XXXX
+                // Format to (XXX) XXX-XXXX
                 if (cleaned.length === 10) {
                     return `(${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6)}`;
                 }
 
-                // Se não for 10 dígitos, retorna o original
+                // If it's not 10 digits, it returns the original.
                 return phone;
             }
         });
