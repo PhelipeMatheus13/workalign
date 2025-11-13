@@ -73,7 +73,10 @@ try {
     }
 
     // Process short_name (optional)
-    $short_name = isset($input['short_name']) ? trim($input['short_name']) : '';
+    $short_name = isset($input['short_name']) ? trim($input['short_name']) : null;
+    if (empty($short_name)) {
+        $short_name = null;
+    }
 
     // Check if another department with the same name already exists (excluding the current one).
     $check_duplicate_stmt = $pdo->prepare('
@@ -92,7 +95,7 @@ try {
     }
 
     // Check if another department already exists with the same short_name (only if it's not empty).
-    if (!empty($short_name)) {
+    if ($short_name !== null) {
         $check_short_name_stmt = $pdo->prepare('
             SELECT id FROM departments 
             WHERE short_name = :short_name AND id != :id

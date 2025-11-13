@@ -232,7 +232,6 @@
             flex-direction: column;
          }
       }
-
    </style>
 </head>
 
@@ -337,8 +336,8 @@
                               <input type="text" class="form-control" id="name" name="name" required>
                            </div>
                            <div class="info-item">
-                              <div class="info-label">Short Name *</div>
-                              <input type="text" class="form-control" id="shortName" name="short_name" required>
+                              <div class="info-label">Short Name</div>
+                              <input type="text" class="form-control" id="shortName" name="short_name">
                            </div>
                            <div class="info-item">
                               <div class="info-label">Status *</div>
@@ -465,7 +464,7 @@
             const shortName = formData.get('short_name').trim();
             const status = formData.get('status');
 
-            if (!name || !shortName || !status) {
+            if (!name || !status) {
                showError('Please fill in all required fields');
                return;
             }
@@ -533,7 +532,7 @@
                   // Restore buttons in case of error.
                   saveBtn.innerHTML = originalSaveText;
                   saveBtn.disabled = false;
-                  cancelBtn.style.display = 'block'; 
+                  cancelBtn.style.display = 'block';
                   showError(errorMessage);
                });
          }
