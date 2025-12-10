@@ -43,3 +43,10 @@ $router->add('POST', '/departments/roles/create', 'DepartmentRolesController@cre
 $router->add('GET', '/departments/roles/get', 'DepartmentRolesController@get');
 $router->add('PUT', '/departments/roles/update', 'DepartmentRolesController@update');
 $router->add('DELETE', '/departments/roles/delete', 'DepartmentRolesController@delete');
+
+// dashboard/view
+$router->add('GET', '/dashboard', 'DashboardController@index');
+// dashboard/controller
+$router->add('GET', '/dashboard/get', 'DashboardController@getDashboardData');
+
+$router->run();
