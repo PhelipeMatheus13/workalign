@@ -1,0 +1,6 @@
+RewriteEngine On
+
+RewriteBase /workalign/
+
+RewriteRule ^$ public/ [L]
+RewriteRule (.*) public/$1 [L]

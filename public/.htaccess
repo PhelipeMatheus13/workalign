@@ -1,0 +1,11 @@
+RewriteEngine On
+
+# Sets the base folder
+RewriteBase /workalign/public/
+
+# If the file or directory physically exists, it serves directly.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise, send it to public/index.php
+RewriteRule ^(.*)$ index.php [QSA,L]

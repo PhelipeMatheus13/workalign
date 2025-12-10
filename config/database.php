@@ -1,27 +1,23 @@
 <?php
-// Load variables from .env
+
+// Load environment variables
 $envFile = __DIR__ . '/../.env';
-if (file_exists($envFile)) {
-    $envVars = parse_ini_file($envFile);
-    
-    $server = $envVars['DB_HOST'] ?? 'localhost';
-    $user = $envVars['DB_USER'] ?? '';
-    $pass = $envVars['DB_PASS'] ?? '';
-    $bd = $envVars['DB_NAME'] ?? '';
-} else {
-    // Fallback for hardcoded values ​​if .env does not exist.
-    $server = "localhost";
-    $user = "user_workalign";
-    $pass = "W0rkAlign2024";
-    $bd = "workalign_db";
+
+if (!file_exists($envFile)) {
+    throw new Exception(".env file not found.");
 }
 
-try {
-    $pdo = new PDO("mysql:host=$server;dbname=$bd;charset=utf8", $user, $pass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    // Em produção, logue o erro em vez de exibir
-    error_log("Database connection error: " . $e->getMessage());
-    die("Database connection error.");
-}
-?>
+$env = parse_ini_file($envFile);
+
+$driver   = $env['DB_DRIVER']   ?? 'mysql';
+$host     = $env['DB_HOST']     ?? 'localhost';
+$db       = $env['DB_NAME']     ?? '';
+$user     = $env['DB_USER']     ?? '';
+$password = $env['DB_PASS']     ?? '';
+
+$dsn = "{$driver}:host={$host};dbname={$db};charset=utf8";
+
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+];
