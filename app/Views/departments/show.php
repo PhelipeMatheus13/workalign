@@ -1147,14 +1147,16 @@ $inlineScript = <<<'HTML'
         }
 
         employees.forEach(function (employee) {
-            var actionsHtml = '<div class="table-actions">' +
-                '<button class="btn btn-view btn-sm" data-id="' + employee.id + '" title="View">' +
-                '<i class="fas fa-eye"></i>' +
-                '</button>' +
-                '<button class="btn btn-delete btn-sm" data-id="' + employee.id + '" title="Delete">' +
-                '<i class="fas fa-trash"></i>' +
-                '</button>' +
-                '</div>';
+        var actionsHtml = `
+            <div class="table-actions">
+                <button class="btn btn-view btn-sm" title="View" data-id="${employee.id}">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-delete btn-sm" data-id="${employee.id}" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
 
             employeesTable.row.add([
                 escapeHtml(employee.name),
