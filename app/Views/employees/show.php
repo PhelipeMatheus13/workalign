@@ -206,6 +206,7 @@ $content = <<<'HTML'
         <div class="loading" id="loadingState">
             <div class="loading-spinner"></div>
             <p>Loading employee data...</p>
+            <p style="font-size: 0.9rem; color: #6c757d;">Please wait while we load the employee information.</p>
         </div>
 
         <div id="employeeContent" style="display: none;">
@@ -277,122 +278,270 @@ HTML;
 
 $inlineScript = <<<'HTML'
 <script>
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    
     document.addEventListener('DOMContentLoaded', function () {
-        const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-        menuItems.forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-menu') === 'employees') {
-                item.classList.add('active');
-            }
-        });
-
-        localStorage.setItem('activeMenu', 'employees');
+        console.log('Employee Details Page');
 
         const urlParams = new URLSearchParams(window.location.search);
-        const employeeId = urlParams.get('id');
+        const employeeID = urlParams.get('id');
 
-        if (employeeId) {
-            loadEmployeeData(employeeId);
-        } else {
-            showError('Employee ID is missing in the URL.');
+        if (!employeeID) {
+            showErrorState('Employee ID is missing in the URL.');
+            console.error('Employee ID is missing in the URL');
+            return;
         }
 
-        // Edit button 
+        console.log('Loading employee data for ID:', employeeID);
+
+        // Attach event listeners
         document.getElementById('editEmployeeBtn').addEventListener('click', function () {
-            if (employeeId) {
-                window.location.href = `employees/update?id=${employeeId}`;
-            } else {
-                alert('Cannot edit: Employee ID not found');
-            }
+            window.location.href = `employees/update?id=${employeeID}`;
         });
 
-        // Function to load employee data.
-        function loadEmployeeData(employeeId) {
-            fetch(`employees/get?id=${employeeId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('API Response:', data); // DEBUG
-                    if (data.success) {
-                        // CORREÇÃO: Controller retorna data.data, não data.employee
-                        const employeeData = data.data || data.employee;
-                        if (!employeeData) {
-                            throw new Error('Employee data is undefined');
-                        }
-                        populateEmployeeData(employeeData);
-                    } else {
-                        throw new Error(data.error || 'Failed to load employee data');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showError('Error loading employee data: ' + error.message);
-                });
-        }
-
-        function populateEmployeeData(employee) {
-            console.log('Employee Data:', employee); // DEBUG
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('employeeContent').style.display = 'block';
-
-            document.getElementById('firstName').textContent = employee.first_name || '-';
-            document.getElementById('lastName').textContent = employee.last_name || '-';
-            document.getElementById('birthday').textContent = formatDate(employee.birthday) || '-';
-            document.getElementById('email').textContent = employee.email || '-';
-            document.getElementById('phoneNumber').textContent = formatPhone(employee.phone_number) || '-';
-
-            const secondPhone = document.getElementById('secondPhoneNumber');
-            if (employee.second_phone_number) {
-                secondPhone.textContent = formatPhone(employee.second_phone_number);
-                secondPhone.classList.remove('empty');
-            } else {
-                secondPhone.textContent = 'Not provided';
-                secondPhone.classList.add('empty');
-            }
-
-            document.getElementById('department').textContent = employee.department_name || '-';
-            document.getElementById('role').textContent = employee.role_name || '-';
-            document.getElementById('salary').textContent = employee.salary ? `$${parseFloat(employee.salary).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
-            document.getElementById('hireDate').textContent = formatDate(employee.hire_date) || '-';
-            document.getElementById('address').textContent = employee.address || '-';
-        }
-
-        function showError(message) {
-            document.getElementById('loadingState').style.display = 'none';
-            const employeeCard = document.getElementById('employeeCard');
-            employeeCard.innerHTML = `<div class="error-message">${message}</div>`;
-        }
-
-        // Function to format dates (from YYYY-MM-DD to DD/MM/YYYY)
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-            
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}/${month}/${year}`;
-        }
-
-        // Function to format phone
-        function formatPhone(phone) {
-            if (!phone) return '';
-            // Remove non-numeric characters
-            const cleaned = phone.replace(/\D/g, '');
-            
-            // Format to (XXX) XXX-XXXX
-            if (cleaned.length === 10) {
-                return `(${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6)}`;
-            }
-            
-            return phone;
-        }
+        // Load employee data
+        showLoadingState();
+        loadEmployeeData(employeeID);
     });
+
+    // ============================================
+    // UI STATE MANAGEMENT FUNCTIONS
+    // ============================================
+
+    function showLoadingState() {
+        const loadingState = document.getElementById('loadingState');
+        const employeeContent = document.getElementById('employeeContent');
+        
+        loadingState.style.display = 'block';
+        employeeContent.style.display = 'none';
+    }
+
+    function showErrorState(message) {
+        const loadingState = document.getElementById('loadingState');
+        const employeeContent = document.getElementById('employeeContent');
+        const employeeCard = document.getElementById('employeeCard');
+        
+        loadingState.style.display = 'none';
+        employeeContent.style.display = 'none';
+        
+        employeeCard.innerHTML = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle fa-2x" style="margin-bottom: 15px;"></i>
+                <h4 style="color: #c0392b; margin-bottom: 10px;">Unable to Load Employee Data</h4>
+                <p>${escapeHtml(message)}</p>
+                <button class="btn btn-primary retry-btn" style="margin-top: 15px;">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>
+        `;
+        
+        // Add retry button functionality
+        setTimeout(() => {
+            document.querySelector('.retry-btn')?.addEventListener('click', function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const employeeID = urlParams.get('id');
+                
+                if (employeeID) {
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Trying...';
+                    this.disabled = true;
+                    showLoadingState();
+                    setTimeout(() => loadEmployeeData(employeeID), 1000);
+                }
+            });
+        }, 100);
+    }
+
+    function showEmployeeData() {
+        const loadingState = document.getElementById('loadingState');
+        const employeeContent = document.getElementById('employeeContent');
+        
+        loadingState.style.display = 'none';
+        employeeContent.style.display = 'block';
+    }
+
+    // ============================================
+    // API CALL FUNCTIONS (Standard Pattern)
+    // ============================================
+
+    function loadEmployeeData(employeeID) {
+        const FUNCTION_NAME = 'loadEmployeeData';
+        const ENDPOINT = `employees/get?id=${employeeID}`;
+        const TIMEOUT_MS = 10000;
+        
+        console.log(`[${FUNCTION_NAME}] Loading employee data for ID: ${employeeID}`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+        return fetch(ENDPOINT, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal
+        })
+        .then(function handleResponse(response) {
+            clearTimeout(timeoutId);
+            
+            console.log(`[${FUNCTION_NAME}] Response received:`, {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
+
+            if (!response.ok) {
+                return response.json()
+                    .catch(function handleJsonError() {
+                        console.error(`[${FUNCTION_NAME}] Response is not valid JSON.:`, {
+                            status: response.status,
+                            statusText: response.statusText
+                        });
+                        
+                        throw {
+                            type: 'HTTP_ERROR',
+                            status: response.status,
+                            message: response.statusText,
+                            friendlyMessage: `Error ${response.status}: ${response.statusText}`
+                        };
+                    })
+                    .then(function handleErrorJson(errJson) {
+                        console.error(`[${FUNCTION_NAME}] API Error:`, {
+                            endpoint: ENDPOINT,
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                        });
+                        
+                        throw {
+                            type: 'API_ERROR',
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                            friendlyMessage: errJson.friendly_message || `Error: ${errJson.error}`
+                        };
+                    });
+            }
+
+            return response.json();
+        })
+        .then(function handleSuccessData(responseBody) {
+            console.log(`[${FUNCTION_NAME}] Response body:`, {
+                success: responseBody.success,
+                hasData: !!responseBody.data,
+                data: responseBody.data
+            });
+
+            if (!responseBody || !responseBody.success || !responseBody.data) {
+                console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+                showErrorState(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+                return;
+            }
+
+            console.log(`[${FUNCTION_NAME}] Employee data loaded successfully.`);
+            return populateEmployeeData(responseBody.data || responseBody.employee);
+        })
+        .catch(function handleFetchError(err) {
+            clearTimeout(timeoutId);
+
+            if (err && err.name === 'AbortError') {
+                console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+                showErrorState('Request timed out. Please try again.');
+                return;
+            }
+
+            if (err.type && (err.type === 'HTTP_ERROR' || err.type === 'API_ERROR')) {
+                console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status} | Type: ${err.type}`);
+                showErrorState(err.friendlyMessage || 'Error loading employee data.');
+                return;
+            }
+
+            console.error(`[${FUNCTION_NAME}] Unexpected error loading employee data:`, {
+                name: err.name,
+                message: err.message,
+            });
+            
+            showErrorState('An unexpected error occurred. Please check your connection and try again.');
+        })
+        .finally(() => {
+            clearTimeout(timeoutId);
+            console.log(`[${FUNCTION_NAME}] Completed`);
+        });
+    }
+
+    // ============================================
+    // DATA MANAGEMENT FUNCTIONS
+    // ============================================
+
+    function populateEmployeeData(employee) {
+        FUNCTION_NAME = 'populateEmployeeData';
+        console.log(`[${FUNCTION_NAME}] Populate form with employee Data:`, employee);
+        
+        if (!employee) {
+            throw new Error('Employee data is undefined');
+        }
+
+        showEmployeeData();
+
+        document.getElementById('firstName').textContent = employee.first_name || '-';
+        document.getElementById('lastName').textContent = employee.last_name || '-';
+        document.getElementById('birthday').textContent = formatDate(employee.birthday) || '-';
+        document.getElementById('email').textContent = employee.email || '-';
+        document.getElementById('phoneNumber').textContent = formatPhone(employee.phone_number) || '-';
+
+        const secondPhone = document.getElementById('secondPhoneNumber');
+
+        // Default to "Not provided"
+        secondPhone.textContent = 'Not provided';
+        secondPhone.classList.add('empty');
+
+        if (employee.second_phone_number) {
+            secondPhone.textContent = formatPhone(employee.second_phone_number);
+            secondPhone.classList.remove('empty');
+        }
+
+        document.getElementById('department').textContent = employee.department_name || '-';
+        document.getElementById('role').textContent = employee.role_name || '-';
+        document.getElementById('salary').textContent = employee.salary ? `$${parseFloat(employee.salary).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-';
+        document.getElementById('hireDate').textContent = formatDate(employee.hire_date) || '-';
+        document.getElementById('address').textContent = employee.address || '-';
+        
+        console.log(`[${FUNCTION_NAME}] Employee data populated successfully.`);
+    }
+
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
+
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    function formatPhone(phone) {
+        if (!phone) return '';
+        const cleaned = phone.replace(/\D/g, '');
+        
+        if (cleaned.length === 10) {
+            return `(${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6)}`;
+        }
+        
+        return phone;
+    }
+
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 </script>
 HTML;
 

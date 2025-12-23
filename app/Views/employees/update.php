@@ -321,32 +321,38 @@ HTML;
 
 $inlineScript = <<<'HTML'
 <script>
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    
+    // Global variables
+    let employeeID;
+    let currentEmployeeData = null;
+    let departmentsData = [];
+
     document.addEventListener('DOMContentLoaded', function () {
-        const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-        menuItems.forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-menu') === 'employees') {
-                item.classList.add('active');
-            }
-        });
+        console.log('Edit Employee Page');
 
-        localStorage.setItem('activeMenu', 'employees');
+        // Get employee ID from URL
+        const params = Object.fromEntries(new URLSearchParams(window.location.search));
+        ({ id: employeeID } = params);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const employeeId = urlParams.get('id');
-        let currentEmployeeData = null;
-        let departmentsData = [];
-
-        if (employeeId) {
-            loadEmployeeData(employeeId);
-            loadDepartmentsAndRoles();
-        } else {
-            showError('Employee ID is missing in the URL.');
+        if (!isValidParam(employeeID)) {
+            showErrorState('Employee ID is missing in the URL.');
+            console.error('Employee ID is missing in the URL:', employeeID);
+            return;
         }
 
+        console.log('Editing employee ID:', employeeID);
+
+        showLoadingState();
+        loadEmployeeData(employeeID);
+        loadDepartmentsAndRoles();
+
+        // Event listeners
         document.getElementById('cancelBtn').addEventListener('click', function () {
             if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
-                window.location.href = `employees/show?id=${employeeId}`;
+                window.location.href = `employees/show?id=${employeeID}`;
             }
         });
 
@@ -355,305 +361,630 @@ $inlineScript = <<<'HTML'
             saveEmployeeChanges();
         });
 
-        // Load employee data
-        function loadEmployeeData(employeeId) {
-            fetch(`employees/get?id=${employeeId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        return response.text().then(text => {
-                            throw new Error(`HTTP ${response.status}: ${text.substring(0, 100)}`);
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Employee data response:', data); // DEBUG
-                    if (data.success) {
-                        // CORREÇÃO: Controller retorna data.data
-                        const employeeData = data.data || data.employee;
-                        if (!employeeData) {
-                            throw new Error('Employee data not found in response');
-                        }
-                        currentEmployeeData = employeeData;
-                        console.log('Current employee data:', currentEmployeeData); // DEBUG
-                        
-                        // Se os departamentos já carregaram, preenche o formulário
-                        if (departmentsData.length > 0) {
-                            console.log('Departments already loaded, populating form');
-                            populateEmployeeForm(currentEmployeeData);
-                        } else {
-                            console.log('Waiting for departments to load...');
-                        }
-                    } else {
-                        throw new Error(data.error || 'Failed to load employee data');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading employee:', error);
-                    showError('Error loading employee data: ' + error.message);
-                });
-        }
-
-        // Load departments and roles
-        function loadDepartmentsAndRoles() {
-            fetch('departments/with-roles')
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        departmentsData = data.data;
-                        populateDepartmentSelect(data.data);
-                        if (currentEmployeeData) {
-                            populateEmployeeForm(currentEmployeeData);
-                        }
-                    } else {
-                        throw new Error(data.error || 'Failed to load departments and roles');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showError('Error loading departments and roles: ' + error.message);
-                });
-        }
-
-        // Populate department select
-        function populateDepartmentSelect(departments) {
-            const departmentSelect = document.getElementById('department');
-            departmentSelect.innerHTML = '<option value="">Select Department</option>';
-
-            departments.forEach(dept => {
-                const option = document.createElement('option');
-                option.value = dept.department_id;
-                option.textContent = dept.department_display;
-                option.setAttribute('data-roles', JSON.stringify(dept.roles));
-                departmentSelect.appendChild(option);
-            });
-        }
-
-        // Populate role select based on department
-        function populateRoleSelect(roles) {
-            const roleSelect = document.getElementById('role');
-            roleSelect.innerHTML = '<option value="">Select Role</option>';
-
-            if (roles && roles.length > 0) {
-                roles.forEach(role => {
-                    const option = document.createElement('option');
-                    option.value = role.role_id;
-                    option.textContent = role.role_name;
-                    roleSelect.appendChild(option);
-                });
-            }
-        }
-
-        // Set selected department and role
-        function setSelectedDepartmentAndRole() {
-            if (!currentEmployeeData) return;
-
-            const departmentSelect = document.getElementById('department');
-            const roleSelect = document.getElementById('role');
-
-            // Find current department
-            const currentDept = departmentsData.find(dept =>
-                dept.department_id == currentEmployeeData.department_id
-            );
-
-            if (currentDept) {
-                // Select department
-                departmentSelect.value = currentDept.department_id;
-
-                // Load roles for this department
-                const roles = currentDept.roles;
-                populateRoleSelect(roles);
-
-                // Select current role
-                if (currentEmployeeData.role_id) {
-                    roleSelect.value = currentEmployeeData.role_id;
-                }
-            }
-        }
-
         // Department change event
         document.getElementById('department').addEventListener('change', function () {
             const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption.value) {
-                const roles = JSON.parse(selectedOption.getAttribute('data-roles') || '[]');
-                populateRoleSelect(roles);
-            } else {
-                populateRoleSelect([]);
-            }
+
+            const roles = selectedOption.value
+                ? JSON.parse(selectedOption.getAttribute('data-roles') || '[]')
+                : [];
+
+            populateRoleSelect(roles);
         });
+    });
 
-        // Populate employee form
-        function populateEmployeeForm(employee) {
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('employeeForm').style.display = 'block';
+    // ============================================
+    // UI STATE MANAGEMENT FUNCTIONS
+    // ============================================
 
-            // Personal information
-            document.getElementById('firstName').value = employee.first_name || '';
-            document.getElementById('lastName').value = employee.last_name || '';
-            document.getElementById('birthday').value = formatDateForInput(employee.birthday) || '';
-            document.getElementById('email').value = employee.email || '';
-            document.getElementById('phoneNumber').value = employee.phone_number || '';
-            document.getElementById('secondPhoneNumber').value = employee.second_phone_number || '';
+    function showLoadingState() {
+        const loadingState = document.getElementById('loadingState');
+        const employeeForm = document.getElementById('employeeForm');
+        
+        if (loadingState) loadingState.style.display = 'block';
+        if (employeeForm) employeeForm.style.display = 'none';
+    }
 
-            // Professional information
-            document.getElementById('salary').value = employee.salary || '';
-            document.getElementById('hireDate').value = formatDateForInput(employee.hire_date) || '';
-            document.getElementById('address').value = employee.address || '';
+    function showFormState() {
+        const loadingState = document.getElementById('loadingState');
+        const employeeForm = document.getElementById('employeeForm');
+        
+        if (loadingState) loadingState.style.display = 'none';
+        if (employeeForm) employeeForm.style.display = 'block';
+    }
 
-            // Set department and role
-            setSelectedDepartmentAndRole();
+    function showErrorState(message) {
+        const employeeCard = document.getElementById('employeeCard');
+        const loadingState = document.getElementById('loadingState');
+        const employeeForm = document.getElementById('employeeForm');
+        
+        if (loadingState) loadingState.style.display = 'none';
+        if (employeeForm) employeeForm.style.display = 'none';
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.innerHTML = `
+            <i class="fas fa-exclamation-circle fa-2x" style="margin-bottom: 15px;"></i>
+            <h4 style="color: #c0392b; margin-bottom: 10px;">Unable to Load Employee Data</h4>
+            <p>${escapeHtml(message)}</p>
+            <button class="btn btn-primary retry-btn" style="margin-top: 15px;">
+                <i class="fas fa-redo"></i> Try Again
+            </button>
+        `;
+        
+        employeeCard.innerHTML = '';
+        employeeCard.appendChild(errorDiv);
+        
+        // Add retry button functionality
+        setTimeout(() => {
+            document.querySelector('.retry-btn')?.addEventListener('click', function() {
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Trying...';
+                this.disabled = true;
+                showLoadingState();
+                setTimeout(() => {
+                    loadEmployeeData(employeeID);
+                    loadDepartmentsAndRoles();
+                }, 1000);
+            });
+        }, 100);
+    }
+
+    function showSaveSuccessState(message) {
+        const employeeCard = document.getElementById('employeeCard');
+        const loadingState = document.getElementById('loadingState');
+        const employeeForm = document.getElementById('employeeForm');
+        
+        if (loadingState) loadingState.style.display = 'none';
+        if (employeeForm) employeeForm.style.display = 'none';
+        
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message';
+        successDiv.innerHTML = `
+            <i class="fas fa-check-circle fa-2x" style="margin-bottom: 15px;"></i>
+            <h4 style="color: #155724; margin-bottom: 10px;">Success!</h4>
+            <p>${escapeHtml(message)}</p>
+            <p style="font-size: 0.9rem; margin-top: 15px; color: #6c757d;">
+                You will be redirected to employee details in <span id="countdown">3</span> seconds...
+            </p>
+            <button id="backNowBtn" class="btn btn-success mt-3">
+                Back now
+            </button>
+        `;
+        
+        employeeCard.innerHTML = '';
+        employeeCard.appendChild(successDiv);
+        document.getElementById('backNowBtn').addEventListener('click', function() {
+            window.location.href = `employees/show?id=${employeeID}`;
+        });
+        // Start countdown
+        let seconds = 3;
+        const countdownElement = document.getElementById('countdown');
+        const countdownInterval = setInterval(() => {
+            seconds--;
+            if (countdownElement) {
+                countdownElement.textContent = seconds;
+            }
+            
+            if (seconds <= 0) {
+                clearInterval(countdownInterval);
+                window.location.href = `employees/show?id=${employeeID}`;
+            }
+        }, 1000);
+    }
+
+    // ============================================
+    // API CALL FUNCTIONS (Standard Pattern)
+    // ============================================
+
+    function loadEmployeeData(employeeId) {
+        const FUNCTION_NAME = 'loadEmployeeData';
+        const ENDPOINT = `employees/get?id=${employeeId}`;
+        const TIMEOUT_MS = 10000;
+        
+        console.log(`[${FUNCTION_NAME}] Loading employee ID: ${employeeId}`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+        return fetch(ENDPOINT, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal
+        })
+        .then(function handleResponse(response) {
+            clearTimeout(timeoutId);
+            
+            console.log(`[${FUNCTION_NAME}] Response received:`, {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
+
+            if (!response.ok) {
+                return response.json()
+                    .catch(function handleJsonError() {
+                        console.error(`[${FUNCTION_NAME}] Response is not valid JSON:`, {
+                            status: response.status,
+                            statusText: response.statusText
+                        });
+                        
+                        throw {
+                            type: 'HTTP_ERROR',
+                            status: response.status,
+                            message: response.statusText,
+                            friendlyMessage: `Error ${response.status}: ${response.statusText}`
+                        };
+                    })
+                    .then(function handleErrorJson(errJson) {
+                        console.error(`[${FUNCTION_NAME}] API Error:`, {
+                            endpoint: ENDPOINT,
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                        });
+                        
+                        throw {
+                            type: 'API_ERROR',
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                            friendlyMessage: errJson.friendly_message || `Error: ${errJson.error}`
+                        };
+                    });
+            }
+
+            return response.json();
+        })
+        .then(function handleSuccessData(responseBody) {
+            console.log(`[${FUNCTION_NAME}] Response body:`, {
+                success: responseBody.success,
+                hasData: !!responseBody.data
+            });
+
+            if (!responseBody || !responseBody.success || !responseBody.data) {
+                console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+                showErrorState(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+                return;
+            }
+
+            currentEmployeeData = responseBody.data;
+            console.log(`[${FUNCTION_NAME}] Employee data loaded successfully.`);
+            
+            // If departments are already loaded, populate the form
+            if (departmentsData.length > 0) {
+                populateEmployeeForm(currentEmployeeData);
+            }
+        })
+        .catch(function handleFetchError(err) {
+            clearTimeout(timeoutId);
+
+            if (err && err.name === 'AbortError') {
+                console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+                showErrorState('Request timed out. Please try again.');
+                return;
+            }
+
+            if (err.type && (err.type === 'HTTP_ERROR' || err.type === 'API_ERROR')) {
+                console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status} | Type: ${err.type}`);
+                showErrorState(err.friendlyMessage || 'Error loading employee data.');
+                return;
+            }
+
+            console.error(`[${FUNCTION_NAME}] Unexpected error loading employee data:`, {
+                name: err.name,
+                message: err.message,
+            });
+            
+            showErrorState('An unexpected error occurred. Please check your connection and try again.');
+        })
+        .finally(() => {
+            clearTimeout(timeoutId);
+            console.log(`[${FUNCTION_NAME}] Completed`);
+        });
+    }
+
+    function loadDepartmentsAndRoles() {
+        const FUNCTION_NAME = 'loadDepartmentsAndRoles';
+        const ENDPOINT = 'departments/with-roles';
+        const TIMEOUT_MS = 10000;
+        
+        console.log(`[${FUNCTION_NAME}] Loading departments with roles`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+        return fetch(ENDPOINT, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal
+        })
+        .then(function handleResponse(response) {
+            clearTimeout(timeoutId);
+            
+            console.log(`[${FUNCTION_NAME}] Response received:`, {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
+
+            if (!response.ok) {
+                return response.json()
+                    .catch(function handleJsonError() {
+                        console.error(`[${FUNCTION_NAME}] Response is not valid JSON:`, {
+                            status: response.status,
+                            statusText: response.statusText
+                        });
+                        
+                        throw {
+                            type: 'HTTP_ERROR',
+                            status: response.status,
+                            message: response.statusText,
+                            friendlyMessage: `Error ${response.status}: ${response.statusText}`
+                        };
+                    })
+                    .then(function handleErrorJson(errJson) {
+                        console.error(`[${FUNCTION_NAME}] API Error:`, {
+                            endpoint: ENDPOINT,
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                        });
+                        
+                        throw {
+                            type: 'API_ERROR',
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                            friendlyMessage: errJson.friendly_message || `Error: ${errJson.error}`
+                        };
+                    });
+            }
+
+            return response.json();
+        })
+        .then(function handleSuccessData(responseBody) {
+            console.log(`[${FUNCTION_NAME}] Response body:`, {
+                success: responseBody.success,
+                hasData: !!responseBody.data
+            });
+
+            if (!responseBody || !responseBody.success || !responseBody.data) {
+                console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+                showErrorState(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+                return;
+            }
+
+            departmentsData = responseBody.data;
+            populateDepartmentSelect(departmentsData);
+            console.log(`[${FUNCTION_NAME}] Departments and roles loaded successfully.`);
+            
+            // If employee data is already loaded, populate the form
+            if (currentEmployeeData) {
+                populateEmployeeForm(currentEmployeeData);
+            }
+        })
+        .catch(function handleFetchError(err) {
+            clearTimeout(timeoutId);
+
+            if (err && err.name === 'AbortError') {
+                console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+                showErrorState('Request timed out. Please try again.');
+                return;
+            }
+
+            if (err.type && (err.type === 'HTTP_ERROR' || err.type === 'API_ERROR')) {
+                console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status} | Type: ${err.type}`);
+                showErrorState(err.friendlyMessage || 'Error loading departments and roles.');
+                return;
+            }
+
+            console.error(`[${FUNCTION_NAME}] Unexpected error:`, {
+                name: err.name,
+                message: err.message,
+            });
+            
+            showErrorState('An unexpected error occurred. Please check your connection and try again.');
+        })
+        .finally(() => {
+            clearTimeout(timeoutId);
+            console.log(`[${FUNCTION_NAME}] Completed`);
+        });
+    }
+
+    function saveEmployeeChanges() {
+        const FUNCTION_NAME = 'saveEmployeeChanges';
+        const ENDPOINT = 'employees/update';
+        const TIMEOUT_MS = 10000;
+        
+        console.log(`[${FUNCTION_NAME}] Saving changes for employee ID: ${employeeID}`);
+
+        // Validate form data
+        const form = document.getElementById('employeeForm');
+        const formData = new FormData(form);
+
+        // Validate required fields
+        const firstName = formData.get('first_name').trim();
+        const lastName = formData.get('last_name').trim();
+        const birthday = formData.get('birthday');
+        const email = formData.get('email').trim();
+        const phoneNumber = formData.get('phone_number').trim();
+        const salary = parseFloat(formData.get('salary'));
+        const departmentId = parseInt(formData.get('department_id'));
+        const roleId = parseInt(formData.get('role_id'));
+
+        if (!firstName || !lastName || !birthday || !email || !phoneNumber) {
+            alert('Please fill in all required fields');
+            return;
         }
 
-        // Save employee changes
-        function saveEmployeeChanges() {
-            if (!confirm('Are you sure you want to save these changes?')) {
-                return;
-            }
+        if (isNaN(salary) || salary < 0) {
+            alert('Please enter a valid salary amount');
+            return;
+        }
 
-            const form = document.getElementById('employeeForm');
-            const formData = new FormData(form);
-            const saveBtn = document.getElementById('saveBtn');
-            const cancelBtn = document.getElementById('cancelBtn');
+        if (isNaN(departmentId) || departmentId <= 0) {
+            alert('Please select a valid department');
+            return;
+        }
 
-            // Validate data before sending
-            const salary = parseFloat(formData.get('salary'));
-            if (isNaN(salary) || salary < 0) {
-                showError('Please enter a valid salary amount');
-                return;
-            }
+        if (isNaN(roleId) || roleId <= 0) {
+            alert('Please select a valid role');
+            return;
+        }
 
-            const departmentId = parseInt(formData.get('department_id'));
-            const roleId = parseInt(formData.get('role_id'));
+        if (!confirm('Are you sure you want to save these changes?')) {
+            return;
+        }
 
-            if (isNaN(departmentId) || departmentId <= 0) {
-                showError('Please select a valid department');
-                return;
-            }
+        // Handle optional secondary phone
+        const secondPhoneValue = formData.get('second_phone_number');
+        const secondPhone = secondPhoneValue?.trim() || undefined;
 
-            if (isNaN(roleId) || roleId <= 0) {
-                showError('Please select a valid role');
-                return;
-            }
 
-            // Handle optional secondary phone
-            const secondPhoneValue = formData.get('second_phone_number');
-            let secondPhone;
-            if (secondPhoneValue === null || secondPhoneValue === undefined) {
-                secondPhone = undefined;
-            } else {
-                const trimmed = secondPhoneValue.trim();
-                secondPhone = trimmed === '' ? undefined : trimmed;
-            }
+        const employeeData = {
+            id: parseInt(employeeID),
+            first_name: firstName,
+            last_name: lastName,
+            birthday: birthday,
+            email: email,
+            phone_number: phoneNumber,
+            salary: salary,
+            address: formData.get('address') ? formData.get('address').trim() : '',
+            department_id: departmentId,
+            role_id: roleId
+        };
 
-            const employeeData = {
-                id: parseInt(employeeId),
-                first_name: formData.get('first_name').trim(),
-                last_name: formData.get('last_name').trim(),
-                birthday: formData.get('birthday'),
-                email: formData.get('email').trim(),
-                phone_number: formData.get('phone_number').trim(),
-                salary: salary,
-                address: formData.get('address') ? formData.get('address').trim() : '',
-                department_id: departmentId,
-                role_id: roleId
-            };
+        // Only add secondary_phone if it is not undefined
+        if (secondPhone !== undefined) {
+            employeeData.second_phone_number = secondPhone;
+        }
 
-            // Only add secondary_phone if it is not undefined.
-            if (secondPhone !== undefined) {
-                employeeData.second_phone_number = secondPhone;
-            }
+        const saveBtn = document.getElementById('saveBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const originalSaveText = saveBtn.innerHTML;
 
-            if (!employeeData.first_name || !employeeData.last_name || !employeeData.email ||
-                !employeeData.phone_number || !employeeData.birthday) {
-                showError('Please fill in all required fields');
-                return;
-            }
+        // Visual feedback
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Changes...';
+        saveBtn.disabled = true;
+        cancelBtn.style.display = 'none';
 
-            const originalSaveText = saveBtn.innerHTML;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-            // Immediate feedback
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Changes...';
-            saveBtn.disabled = true;
+        console.log(`[${FUNCTION_NAME}] Sending data:`, employeeData);
 
-            // Hide the cancel button after confirming changes. 
-            cancelBtn.style.display = 'none';
+        return fetch(ENDPOINT, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(employeeData),
+            signal: controller.signal
+        })
+        .then(function handleResponse(response) {
+            clearTimeout(timeoutId);
 
-            console.log('Sending data:', employeeData);
+            console.log(`[${FUNCTION_NAME}] Response received:`, {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
 
-            fetch('employees/update', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(employeeData)
-            })
-            .then(response => {
-                // Primeiro, verificar se a resposta é HTML (provavelmente será)
-                const contentType = response.headers.get('content-type');
-                
-                if (contentType && contentType.includes('text/html')) {
-                    // Se for HTML, retornar o texto HTML
-                    return response.text();
-                } else {
-                    // Se não for HTML, tentar JSON como fallback
-                    return response.json().then(data => {
-                        throw new Error(`Unexpected response type. Expected HTML, got: ${contentType}`);
+            if (!response.ok) {
+                return response.json()
+                    .catch(function handleJsonError() {
+                        console.error(`[${FUNCTION_NAME}] Response is not valid JSON:`, {
+                            status: response.status,
+                            statusText: response.statusText
+                        });
+                        
+                        throw {
+                            type: 'HTTP_ERROR',
+                            status: response.status,
+                            message: response.statusText,
+                            friendlyMessage: `Error ${response.status}: ${response.statusText}`
+                        };
+                    })
+                    .then(function handleErrorJson(errJson) {
+                        console.error(`[${FUNCTION_NAME}] API Error:`, {
+                            endpoint: ENDPOINT,
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                        });
+                        
+                        throw {
+                            type: 'API_ERROR',
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                            friendlyMessage: errJson.friendly_message || `Error: ${errJson.error}`
+                        };
                     });
-                }
-            })
-            .then(html => {
-                // Substituir o conteúdo da página atual pelo HTML da resposta
-                document.open();
-                document.write(html);
-                document.close();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                let errorMessage = 'Error updating employee: ';
-                
-                if (error.message.includes('Unexpected token')) {
-                    errorMessage += 'Server returned invalid response. Please check server logs.';
-                } else {
-                    errorMessage += error.message;
-                }
+            }
 
-                // Restaurar botões em caso de erro
-                saveBtn.innerHTML = originalSaveText;
-                saveBtn.disabled = false;
-                cancelBtn.style.display = 'block';
-                showError(errorMessage);
+            return response.json();
+        })
+        .then(function handleSuccess(responseBody) {
+            if (!responseBody || !responseBody.success) {
+                console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+                showErrorState(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+                return;
+            }  
+            
+            console.log(`[${FUNCTION_NAME}] Employee updated successfully.`);
+            showSaveSuccessState(responseBody.message || 'Employee successfully updated.');
+        })
+        .catch(function handleFetchError(err) {
+            clearTimeout(timeoutId);
+
+            if (err && err.name === 'AbortError') {
+                console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+                alert('Request timed out. Please try again.');
+                restoreButtons(saveBtn, cancelBtn, originalSaveText);
+                return;
+            }
+
+            if (err.type && (err.type === 'API_ERROR' || err.type === 'HTTP_ERROR')) {
+                console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status || 'N/A'} | Type: ${err.type}`);
+                
+                // Show error message
+                const errorMessage = err.friendlyMessage || 'Error updating employee.';
+                showFormState(); // Ensure form is visible
+                alert(errorMessage);
+                restoreButtons(saveBtn, cancelBtn, originalSaveText);
+                return;
+            }
+
+            console.error(`[${FUNCTION_NAME}] Unexpected error:`, {
+                name: err.name,
+                message: err.message,
+            });
+
+            alert('An unexpected error occurred. Please check your connection and try again.');
+            restoreButtons(saveBtn, cancelBtn, originalSaveText);
+        })
+        .finally(() => {
+            clearTimeout(timeoutId);
+            console.log(`[${FUNCTION_NAME}] Completed`);
+        });
+    }
+
+    // ============================================
+    // DATA MANAGEMENT FUNCTIONS
+    // ============================================
+
+    function populateDepartmentSelect(departments) {
+        const departmentSelect = document.getElementById('department');
+        departmentSelect.innerHTML = '<option value="">Select Department</option>';
+
+        departments.forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept.department_id;
+            option.textContent = dept.department_display;
+            option.setAttribute('data-roles', JSON.stringify(dept.roles));
+            departmentSelect.appendChild(option);
+        });
+    }
+
+    function populateRoleSelect(roles) {
+        const roleSelect = document.getElementById('role');
+        roleSelect.innerHTML = '<option value="">Select Role</option>';
+
+        if (roles && roles.length > 0) {
+            roles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.role_id;
+                option.textContent = role.role_name;
+                roleSelect.appendChild(option);
             });
         }
+    }
 
-        // Format date for input type="date"
-        function formatDateForInput(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
+    function setSelectedDepartmentAndRole() {
+        if (!currentEmployeeData) return;
 
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+        const departmentSelect = document.getElementById('department');
+        const roleSelect = document.getElementById('role');
+
+        // Find current department
+        const currentDept = departmentsData.find(dept =>
+            dept.department_id == currentEmployeeData.department_id
+        );
+
+        if (currentDept) {
+            // Select department
+            departmentSelect.value = currentDept.department_id;
+
+            // Load roles for this department
+            const roles = currentDept.roles;
+            populateRoleSelect(roles);
+
+            // Select current role
+            if (currentEmployeeData.role_id) {
+                roleSelect.value = currentEmployeeData.role_id;
+            }
         }
+    }
 
-        function showError(message) {
-            document.getElementById('loadingState').style.display = 'none';
-            const employeeCard = document.getElementById('employeeCard');
-            employeeCard.innerHTML = `<div class="error-message">${message}</div>`;
-        }
+    function populateEmployeeForm(employee) {
+        console.log('Populating form with employee data:', employee);
 
-        function showSuccess(message) {
-            const employeeCard = document.getElementById('employeeCard');
-            const successDiv = document.createElement('div');
-            successDiv.className = 'success-message';
-            successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-            employeeCard.insertBefore(successDiv, employeeCard.firstChild);
-        }
-    });
+        showFormState();
+
+        // Personal information
+        document.getElementById('firstName').value = employee.first_name || '';
+        document.getElementById('lastName').value = employee.last_name || '';
+        document.getElementById('birthday').value = formatDateForInput(employee.birthday) || '';
+        document.getElementById('email').value = employee.email || '';
+        document.getElementById('phoneNumber').value = employee.phone_number || '';
+        document.getElementById('secondPhoneNumber').value = employee.second_phone_number || '';
+
+        // Professional information
+        document.getElementById('salary').value = employee.salary || '';
+        document.getElementById('hireDate').value = formatDateForInput(employee.hire_date) || '';
+        document.getElementById('address').value = employee.address || '';
+
+        // Set department and role
+        setSelectedDepartmentAndRole();
+    }
+
+    function restoreButtons(saveBtn, cancelBtn, originalSaveText) {
+        saveBtn.innerHTML = originalSaveText;
+        saveBtn.disabled = false;
+        cancelBtn.style.display = 'block';
+    }
+
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
+    
+    function isValidParam(value) {
+        return value !== null &&
+            value !== undefined &&
+            value !== '' &&
+            value !== 'null' &&
+            value !== 'undefined';
+    }
+
+    function escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function formatDateForInput(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
 </script>
 HTML;
 

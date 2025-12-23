@@ -55,11 +55,9 @@ class Employees
                 $emp['salary'] = number_format(($emp['salary'] ?? 0), 2, '.', ',');
 
                 // Checks if a department short_name exists.
-                if (!empty($emp['department_short_name'])) {
-                    $emp['department'] = $emp['department_short_name'];
-                } else {
-                    $emp['department'] = $emp['department_name'];
-                }
+                $emp['department'] = !empty($emp['department_short_name'])
+                    ? $emp['department_short_name']
+                    : $emp['department_name'];
 
                 $emp['role'] = $emp['role_name'];
 
@@ -541,7 +539,7 @@ class Employees
 
             return [
                 'success' => true,
-                'upcoming_birthdays' => $rows // cada item tem employee_name, birthday, department_name, days_until_birthday
+                'upcoming_birthdays' => $rows // each item has employee_name, birthday, department_name, days_until_birthday
             ];
         } catch (PDOException $e) {
             return [

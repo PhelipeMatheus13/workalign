@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\ErrorMapper; 
 use App\Core\Request;
 use App\Core\Response;
 use App\Models\Employees;
@@ -10,7 +11,6 @@ class EmployeesController
 {
     public function index()
     {
-        // Render the employees view
         return Response::view('employees/index');
     }
 
@@ -20,19 +20,12 @@ class EmployeesController
         $result = $model->listEmployees();
 
         if (!$result['success']) {
-            $errorMap = [
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
-                'error' => $result['message'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error' => $result['error'],
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([
@@ -44,12 +37,12 @@ class EmployeesController
     public function listByRole(Request $request)
     {
         $role_id = $request->input('role_id');
-        // Validate role_id
         if (!$role_id || !is_numeric($role_id)) {
             return Response::json([
                 'success' => false,
                 'error' => 'INVALID_INPUT',
-                'message' => 'Invalid role ID provided.'
+                'message' => 'Invalid role ID provided.',
+                'friendly_message' => 'The provided role ID is invalid.'
             ], 400);
         }
 
@@ -57,19 +50,12 @@ class EmployeesController
         $result = $model->listEmployeesByRole($role_id);
 
         if (!$result['success']) {
-            $errorMap = [
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
                 'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([
@@ -87,12 +73,12 @@ class EmployeesController
     public function get(Request $request)
     {
         $id = $request->input('id');
-        // Validate ID
         if (!$id || !is_numeric($id)) {
             return Response::json([
                 'success' => false,
                 'error' => 'INVALID_INPUT',
-                'message' => 'Invalid employee ID provided.'
+                'message' => 'Invalid employee ID provided.',
+                'friendly_message' => 'The provided employee ID is invalid.'
             ], 400);
         }
 
@@ -100,20 +86,12 @@ class EmployeesController
         $result = $model->getEmployeeByID($id);
 
         if (!$result['success']) {
-            $errorMap = [
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500],
-                'NOT_FOUND' => ["message' => 'Employee id=$id not found.", 'code' => 404]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
                 'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([
@@ -218,17 +196,9 @@ class EmployeesController
         $result = $model->createEmployee($data);
 
         if (!$result['success']) {
-            $errorMap = [
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return $this->renderResponse(
                 'Registration Error',
-                $errorConfig['message'],
+                $result['message'],
                 'error',
                 [
                     'showBackButton' => true,
@@ -244,7 +214,8 @@ class EmployeesController
             'success',
             [
                 'redirectUrl' => 'employees',
-                'redirectTime' => 5000
+                'backUrl' => 'employees',
+                'redirectTime' => 3000
             ]
         );
     }
@@ -293,15 +264,12 @@ class EmployeesController
 
         if (!empty($errorMessages)) {
             $errorMessage = implode('<br>', $errorMessages);
-            return $this->renderResponse(
-                'Validation Error',
-                $errorMessage,
-                'error',
-                [
-                    'showBackButton' => true,
-                    'backUrl' => 'employees/update?id=' . $employee_id
-                ]
-            );
+            return Response::JSON([
+                'success' => false,
+                'error' => 'VALIDATION_ERROR',
+                'error_message' => $errorMessage,
+                'friendly_message' => 'Please fill in all required fields.'
+            ], 400);
         }
 
         // Process second_phone_number
@@ -316,43 +284,24 @@ class EmployeesController
         $result = $model->updateEmployee($employee_id, $data);
 
         if (!$result['success']) {
-            $errorMap = [
-                'NOT_FOUND' => ['message' => 'Employee not found.', 'code' => 404],
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
-            return $this->renderResponse(
-                'Update Error',
-                $errorConfig['message'],
-                'error',
-                [
-                    'showBackButton' => true,
-                    'backUrl' => 'employees/update?id=' . $employee_id
-                ]
-            );
+            return Response::json([
+                'success' => false,
+                'error' => $result['error'],
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         $employeeName = $data['first_name'] . ' ' . $data['last_name'];
-        return $this->renderResponse(
-            'Employee Updated',
-            "Employee <strong>$employeeName</strong> has been successfully updated!",
-            'success',
-            [
-                'redirectUrl' => 'employees/show?id=' . $employee_id,
-                'redirectTime' => 2000,
-            ]
-        );
+        return Response::json([
+            'success' => true,
+            'message' => "Employee $employeeName has been successfully updated!"
+        ]); 
     }
 
     public function delete(Request $request)
     {
         $id = $request->input('id');
-
-        // Validate ID
         if (!$id || !is_numeric($id)) {
             return Response::json([
                 'success' => false,
@@ -365,20 +314,12 @@ class EmployeesController
         $result = $model->deleteEmployee($id);
 
         if (!$result['success']) {
-            $errorMap = [
-                'NOT_FOUND' => ['message' => 'Employee not found.', 'code' => 404],
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500], 
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
                 'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([

@@ -523,104 +523,180 @@ HTML;
 
 $inlineScript = <<<'HTML'
 <script>
+    // ============================================
+    // INITIALIZATION 
+    // ============================================
+    
    document.addEventListener('DOMContentLoaded', function () {
-      // Mark the panel menu as active.
-      const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-      menuItems.forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-menu') === 'dashboard') {
-               item.classList.add('active');
-            }
-      });
-
-      // Save to localStorage
-      localStorage.setItem('activeMenu', 'dashboard');
+      console.log('Dashboard Page');
 
       // Add click functionality to action cards
       document.querySelectorAll('.quick-action-card').forEach(card => {
-            if (card.getAttribute('onclick')) {
+         if (card.getAttribute('onclick')) {
                card.style.cursor = 'pointer';
-            }
+         }
       });
 
       loadDashboardData();
    });
 
-   /**
-    * Fetch dashboard data from the server and normalize it for the view.
-    * Uses a timeout (AbortController) to avoid hanging requests.
-    */
-   function loadDashboardData() {
-      console.log('Loading dashboard data...');
+    // ============================================
+    // UI STATE MANAGEMENT FUNCTIONS
+    // ============================================
+    
+   function showErrorState(friendlyMessage) {
+      // Update card status to show error.
+      document.querySelectorAll('.card-value').forEach(el => {
+         el.classList.remove('loading');
+         el.textContent = 'Error'; // Simple error text for small cards
+      });
 
-      const controller = new AbortController();
-      const TIMEOUT_MS = 10000; // 10 seconds timeout
-      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+      // Display friendly error message in graph section
+      const barChart = document.getElementById('departmentChart');
+      if (barChart) {
+         barChart.innerHTML = `
+               <div class="text-center py-5">
+                  <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                  <div class="mt-2 text-danger">${escapeHtml(friendlyMessage) || 'Failed to load data'}</div>
+               </div>
+         `;
+      }
 
-      fetch('dashboard/get', { signal: controller.signal, cache: 'no-store' })
-            .then(response => {
-               if (!response.ok) {
-                  return response.json()
-                        .catch(() => {
-                           // If response is not JSON, reject with status info
-                           throw { status: response.status, message: response.statusText };
-                        })
-                        .then(errJson => {
-                           // Reject with parsed error body
-                           throw { status: response.status, body: errJson };
-                        });
-               }
-               // If OK, parse JSON body.
-               return response.json();
-            })
-            .then(payload => {
-               const valid = payload && payload.success && payload.data;
-               if (!valid) {
-                  console.error('API returned an error payload:', payload);
-                  showErrorState();
-                  return; 
-               }
-
-               const normalized = normalizeDashboardData(payload.data);
-               updateDashboard(normalized);
-            })
-            .catch(err => {
-               // Handle aborts, HTTP errors and other failures.
-               // Timeout
-               if (err && err.name === 'AbortError') {
-                  console.error('Dashboard request timed out.');
-                  showErrorState();
-                  return;
-               }
-               
-               // HTTP Errors
-               const hasStatus = err && err.status;
-               if (hasStatus) {
-                  console.error('HTTP Error while loading dashboard data:', err);
-
-                  const serverMsg = err.body && err.body.message;
-                  if (serverMsg) {
-                     console.error('Server message:', serverMsg);
-                  }
-
-                  showErrorState();
-                  return;
-               }
-
-               console.error('Unexpected error loading dashboard data:', err);
-               showErrorState();
-            })
-            .finally(() => {
-               clearTimeout(timeoutId);
-            });
+      // Display simple error message in the birthday list (shorter to fit space)
+      const birthdayContainer = document.getElementById('birthdayList');
+      if (birthdayContainer) {
+         birthdayContainer.innerHTML = `
+               <div class="text-center py-5">
+                  <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                  <div class="mt-2 text-danger">Failed to load birthdays </div>
+               </div>
+         `;
+      }
    }
 
+    // ============================================
+    // API CALL FUNCTIONS (Standard Pattern)
+    // ============================================
+
+    // Fetch dashboard data from the server and normalize it for the view.
+    // Uses a timeout (AbortController) to avoid hanging requests.
+   function loadDashboardData() {
+      const FUNCTION_NAME = 'loadDashboardData';
+      const ENDPOINT = 'dashboard/get';
+      const TIMEOUT_MS = 10000;
+
+      console.log(`[${FUNCTION_NAME}] Loading dashboard data...`);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      return fetch(ENDPOINT, {
+         method: 'GET',
+         headers: { 'Content-Type': 'application/json' },
+         signal: controller.signal
+      })
+      .then(function handleResponse(response){
+         clearTimeout(timeoutId); // Response received - cancel timeout
+
+         console.log(`[${FUNCTION_NAME}] Response received:`, {
+               status: response.status,
+               statusText: response.statusText,
+               ok: response.ok
+         });
+
+         if (!response.ok) {
+               return response.json()
+                  .catch(function handleJsonError() {
+                     console.error(`[${FUNCTION_NAME}] Response is not valid JSON.:`, {
+                           status: response.status,
+                           statusText: response.statusText
+                     });
+                     
+                     throw {
+                           type: 'HTTP_ERROR',
+                           status: response.status,
+                           message: response.statusText,
+                           friendlyMessage: `Erro ${response.status}: ${response.statusText}`
+                     };
+                  })
+                  .then(function handleErrorJson(errJson) {
+                     // Detailed API error log
+                     console.error(`[${FUNCTION_NAME}] API Error:`, {
+                           endpoint: ENDPOINT,
+                           status: response.status,
+                           error: errJson.error,
+                           errorMessage: errJson.error_message,
+                     });
+                     
+                     throw {
+                           type: 'API_ERROR',
+                           status: response.status,
+                           error: errJson.error,
+                           errorMessage: errJson.error_message,
+                           friendlyMessage: errJson.friendly_message || `Erro: ${errJson.error}`
+                     };
+                  });
+         }
+
+         return response.json(); // If OK, parse JSON body.
+      })
+      .then(function handleSuccessData(responseBody) {
+         console.log(`[${FUNCTION_NAME}] Response body:`, {
+               success: responseBody.success,
+               hasData: !!responseBody.data,
+         });
+
+         if (!responseBody || !responseBody.success || !responseBody.data) {
+               console.error(`[${FUNCTION_NAME}] Completed`);
+               showErrorState(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+               return;
+         }
+         
+         console.log(`[${FUNCTION_NAME}] Normalizing dashboard data for view...`);
+         const normalized = normalizeDashboardData(responseBody.data);
+         console.log(`[${FUNCTION_NAME}] Rendering dashboard data.`);
+         return updateDashboard(normalized);
+      })
+      .catch(err => {
+         clearTimeout(timeoutId); // An error occurred - cancel timeout
+
+         if (err && err.name === 'AbortError') {
+               console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+               showErrorState('Request timed out. Please try again.');
+               return;
+         }
+
+         if (err.type && (err.type === 'HTTP_ERROR' || err.type === 'API_ERROR')) {
+               console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status} | Type: ${err.type}`);
+               showErrorState(err.friendlyMessage || 'Error loading departments.');
+               return;
+         }
+         
+         // Other unexpected errors
+         console.error(`[${FUNCTION_NAME}] Unexpected error:`, {
+               name: err.name,
+               message: err.message,
+         });
+
+         showErrorState('An unexpected error occurred. Please check your connection and try again.');
+      })
+      .finally(() => {
+         clearTimeout(timeoutId);
+         console.log(`[${FUNCTION_NAME}] Completed`);
+      });
+   }
+
+   // ============================================
+   // DATA MANAGEMENT FUNCTIONS
+   // ============================================
+   
    /**
     * Normalize server response for the view.
     * Ensures numbers are typed and arrays exist.
     * Note: API response field names must match exactly what the view expects.
     */
    function normalizeDashboardData(data) {
+      const FUNCTION_NAME = 'normalizeDashboardData';
       data = data || {};
       data.general_info = data.general_info || {};
 
@@ -635,48 +711,53 @@ $inlineScript = <<<'HTML'
       data.department_distribution = Array.isArray(data.department_distribution) ? data.department_distribution : [];
       data.upcoming_birthdays = Array.isArray(data.upcoming_birthdays) ? data.upcoming_birthdays : [];
 
+      console.log(`[${FUNCTION_NAME}] Completed normalization:`, data);
       return data;
    }
 
    function updateDashboard(data) {
+      console.log('[updateDashboard] Updating dashboard with new data...', data);
       updateGeneralInfo(data.general_info);
       updateDepartmentChart(data.department_distribution);
       updateBirthdayList(data.upcoming_birthdays);
+      console.log('[updateDashboard] Dashboard update complete.');
    }
 
-   
    function updateGeneralInfo(generalInfo) {
-      console.log('Updating general info with:', generalInfo);
+      const FUNCTION_NAME = 'updateGeneralInfo';
 
-      
+      // Remove loading indicator
       document.querySelectorAll('.card-value').forEach(el => {
-            el.classList.remove('loading');
+         el.classList.remove('loading');
       });
 
       const allCards = document.querySelectorAll('.dashboard-card');
       const generalCards = [];
 
       allCards.forEach(card => {
-            // Check if the card is in the General Information section
-            const sectionTitle = card.closest('.row')?.previousElementSibling;
-            if (sectionTitle && sectionTitle.classList.contains('section-title') &&
+         // Check if the card is in the General Information section
+         const sectionTitle = card.closest('.row')?.previousElementSibling;
+         if (sectionTitle && sectionTitle.classList.contains('section-title') &&
                sectionTitle.textContent.includes('General Information')) {
                generalCards.push(card);
-            }
+         }
       });
 
-      console.log('General info cards found:', generalCards.length);
 
       if (generalCards.length >= 4) {
-            // Update in the correct order.
-            generalCards[0].querySelector('.card-value').textContent = generalInfo.total_departments;
-            generalCards[1].querySelector('.card-value').textContent = generalInfo.total_employees;
-            generalCards[2].querySelector('.card-value').textContent = '$' + formatNumber(generalInfo.average_salary);
-            generalCards[3].querySelector('.card-value').textContent = '$' + formatNumber(generalInfo.total_salary);
+         // Update in the correct order.
+         generalCards[0].querySelector('.card-value').textContent = generalInfo.total_departments;
+         generalCards[1].querySelector('.card-value').textContent = generalInfo.total_employees;
+         generalCards[2].querySelector('.card-value').textContent = '$' + formatNumber(generalInfo.average_salary);
+         generalCards[3].querySelector('.card-value').textContent = '$' + formatNumber(generalInfo.total_salary);
       }
+
+      console.log(`[${FUNCTION_NAME}] General info updated.`);
    }
 
    function updateDepartmentChart(departmentData) {
+      const FUNCTION_NAME = 'updateDepartmentChart';
+
       const barChart = document.getElementById('departmentChart');
       if (!barChart) return;
 
@@ -684,13 +765,13 @@ $inlineScript = <<<'HTML'
       barChart.innerHTML = '';
 
       if (!departmentData || departmentData.length === 0) {
-            barChart.innerHTML = `
+         barChart.innerHTML = `
                <div class="text-center py-5">
                   <i class="fas fa-chart-bar fa-2x text-muted"></i>
                   <div class="mt-2 text-muted">No department data available</div>
                </div>
-            `;
-            return;
+         `;
+         return;
       }
 
       // Find the maximum value for calculating percentages.
@@ -698,132 +779,117 @@ $inlineScript = <<<'HTML'
 
       // Add each department to the chart.
       departmentData.forEach((dept, index) => {
-            const count = Number(dept.employee_count) || 0;
-            const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
+         const count = Number(dept.employee_count) || 0;
+         const percentage = maxCount > 0 ? (count / maxCount) * 100 : 0;
 
-            const barItem = document.createElement('div');
-            barItem.className = 'bar-item';
+         const barItem = document.createElement('div');
+         barItem.className = 'bar-item';
 
-            // Define different colors for each bar.
-            const colors = [
+         // Define different colors for each bar.
+         const colors = [
                '#3498db', '#2ecc71', '#e74c3c', '#f39c12',
                '#9b59b6', '#1abc9c', '#34495e', '#e67e22',
                '#16a085', '#27ae60', '#2980b9', '#8e44ad'
-            ];
-            const color = colors[index % colors.length];
+         ];
+         const color = colors[index % colors.length];
 
-            const label = dept.department_name || 'Unknown';
+         const label = dept.department_name || 'Unknown';
 
-            barItem.innerHTML = `
+         barItem.innerHTML = `
                <div class="bar-label">${label}</div>
                <div class="bar-container">
                   <div class="bar-fill" style="width: ${percentage}%; background-color: ${color};">
-                        ${count}
+                     ${count}
                   </div>
                </div>
                <div class="bar-count">${count}</div>
-            `;
+         `;
 
-            barChart.appendChild(barItem);
+         barChart.appendChild(barItem);
       });
+      console.log(`[${FUNCTION_NAME}] Department chart updated.`);
    }
 
    function updateBirthdayList(birthdayData) {
+      const FUNCTION_NAME = 'updateBirthdayList';
       const birthdayContainer = document.getElementById('birthdayList');
       if (!birthdayContainer) return;
 
-      
+      // Clear existing data
       birthdayContainer.innerHTML = '';
 
       if (!birthdayData || birthdayData.length === 0) {
-            birthdayContainer.innerHTML = `
+         birthdayContainer.innerHTML = `
                <div class="text-center py-5">
                   <i class="fas fa-birthday-cake fa-2x text-muted"></i>
                   <div class="mt-2 text-muted">No upcoming birthdays</div>
                </div>
-            `;
-            return;
+         `;
+         return;
       }
 
       birthdayData.forEach(person => {
-            const birthdayItem = document.createElement('div');
-            birthdayItem.className = 'birthday-item';
+         const birthdayItem = document.createElement('div');
+         birthdayItem.className = 'birthday-item';
 
-            // Generate initials for the avatar
-            const names = (person.employee_name || '').split(' ');
-            const initials = (names[0]?.charAt(0) || '') + (names[1]?.charAt(0) || '');
-            const initialsText = initials.toUpperCase();
+         // Generate initials for the avatar
+         const names = (person.employee_name || '').split(' ');
+         const initials = (names[0]?.charAt(0) || '') + (names[1]?.charAt(0) || '');
+         const initialsText = initials.toUpperCase();
 
-            // Calculate the days until the birthday.
-            const daysUntil = Number(person.days_until_birthday) || 0;
+         // Calculate the days until the birthday.
+         const daysUntil = Number(person.days_until_birthday) || 0;
 
          let dateText = '';
 
          if (daysUntil === 0) {
-            dateText = 'Today';
+               dateText = 'Today';
          }
 
          if (daysUntil === 1) {
-            dateText = 'Tomorrow';
+               dateText = 'Tomorrow';
          }
 
          if (daysUntil > 1) {
-            dateText = `In ${daysUntil} days`;
+               dateText = `In ${daysUntil} days`;
          }
 
-            const deptName = person.department_name || '';
+         const deptName = person.department_name || '';
 
-            birthdayItem.innerHTML = `
+         birthdayItem.innerHTML = `
                <div class="birthday-avatar">${initialsText}</div>
                <div class="birthday-info">
-                  <div class="birthday-name">${person.employee_name}</div>
+                  <div class="birthday-name">${escapeHtml(person.employee_name)}</div>
                   <div class="birthday-date">${dateText} - ${deptName}</div>
                </div>
-            `;
+         `;
 
-            birthdayContainer.appendChild(birthdayItem);
+         birthdayContainer.appendChild(birthdayItem);
       });
+
+      console.log(`[${FUNCTION_NAME}] Birthday list updated.`);
    }
 
+   // ============================================
+   // UTILITY FUNCTIONS
+   // ============================================
+   
    function formatNumber(number) {
       return number.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
+         minimumFractionDigits: 2,
+         maximumFractionDigits: 2
       });
    }
 
-   function showErrorState() {
-      console.error('Failed to load dashboard data');
-
-      // Update card status to show error.
-      document.querySelectorAll('.card-value').forEach(el => {
-            el.classList.remove('loading');
-            el.textContent = 'Error';
-      });
-
-      // Display error message in graph
-      const barChart = document.getElementById('departmentChart');
-      if (barChart) {
-            barChart.innerHTML = `
-               <div class="text-center py-5">
-                  <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
-                  <div class="mt-2 text-danger">Failed to load data</div>
-               </div>
-            `;
-      }
-
-      // Display error message in the birthday list
-      const birthdayContainer = document.getElementById('birthdayList');
-      if (birthdayContainer) {
-            birthdayContainer.innerHTML = `
-               <div class="text-center py-5">
-                  <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
-                  <div class="mt-2 text-danger">Failed to load data</div>
-               </div>
-            `;
-      }
+function escapeHtml(unsafe) {
+   return unsafe
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
    }
-</script> 
+</script>
 HTML;
 
-include __DIR__ .'/../layouts/main.php';
+include __DIR__ . '/../layouts/main.php';
