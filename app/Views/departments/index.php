@@ -323,22 +323,13 @@ HTML;
 
 $inlineScript = <<<'HTML'
 <script>
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    
     document.addEventListener('DOMContentLoaded', function () {
-        const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-        menuItems.forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-menu') === 'departments') {
-                item.classList.add('active');
-            }
-        });
-
-        localStorage.setItem('activeMenu', 'departments');
-
-        // Mostrar estado de carregamento inicial
-        showLoadingState();
-        loadDepartments();
-
-        // Add functionality for custom carousel controls.
+        console.log('Departments Page');
+        
         document.querySelectorAll('.carousel-control').forEach(control => {
             control.addEventListener('click', function () {
                 const target = this.getAttribute('data-target');
@@ -346,7 +337,14 @@ $inlineScript = <<<'HTML'
                 $(target).carousel(direction);
             });
         });
+
+        showLoadingState();
+        loadDepartments();
     });
+
+    // ============================================
+    // UI STATE MANAGEMENT FUNCTIONS
+    // ============================================
 
     function showLoadingState() {
         const carouselInner = document.getElementById('carouselInner');
@@ -376,71 +374,308 @@ $inlineScript = <<<'HTML'
         carouselInner.appendChild(loadingItem);
     }
 
-    function loadDepartments() {
-        fetch('departments/list', {
-            // Adicionar timeout para evitar espera infinita
-            signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : null
-        })
-            .then(async response => {
-                // Verificar se a resposta é JSON válido
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Server returned non-JSON response. The server might be down.');
-                }
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errorText || 'Server error'}`);
-                }
-                
-                return response.json();
-            })
-            .then(responseData => {
-                if (!responseData || typeof responseData !== 'object') {
-                    showConnectionError('Invalid response from server. Please try again.');
-                    return;
-                }
-                
-                if (!responseData.success) {
-                    showConnectionError(responseData.message || responseData.error || 'Failed to load departments');
-                    return;
-                }
-                
-                // Check if data is valid and not empty
-                if (!responseData.data || !Array.isArray(responseData.data)) {
-                    showConnectionError('Invalid data received from server');
-                    return;
-                }
-                
-                if (responseData.data.length === 0) {
-                    showNoDepartmentsMessage();
-                    return;
-                }
-                
-                renderCarousel(responseData.data);
-                initializeCarousel();
-                attachEventListeners();
-            })
-            .catch(error => {
-                console.error('Error loading departments:', error);
-                
-                let errorMessage = 'Failed to load departments. ';
-                
-                if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-                    errorMessage += 'Request timed out. The server might be down or slow.';
-                } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    errorMessage += 'Network error. Please check your connection.';
-                } else if (error.message.includes('non-JSON')) {
-                    errorMessage += 'Server is not responding properly. Please contact support.';
-                } else {
-                    errorMessage += error.message;
-                }
-                
-                showConnectionError(errorMessage);
+    function showErrorState(friendlyMessage) {
+        const carouselInner = document.getElementById('carouselInner');
+        const carouselIndicators = document.getElementById('carouselIndicators');
+        
+        carouselInner.innerHTML = '';
+        carouselIndicators.innerHTML = '';
+        
+        const errorItem = document.createElement('div');
+        errorItem.className = 'carousel-item active';
+        errorItem.innerHTML = `
+            <div class="department-header">
+                <h3 class="department-title" style="color: #e74c3c; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-exclamation-triangle"></i> Error
+                </h3>
+            </div>
+            
+            <div class="department-info" style="grid-template-columns: 1fr;">
+                <div class="info-card" style="background: linear-gradient(135deg, #ffeaea 0%, #ffcccc 100%); border: 2px solid #ff9999; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                    <div style="text-align: center; width: 100%;">
+                        <i class="fas fa-exclamation-circle fa-3x" style="color: #e74c3c; margin-bottom: 20px;"></i>
+                        <h4 style="color: #c0392b; font-size: 1.2rem; margin-bottom: 10px;">Unable to Load Departments</h4>
+                        <p style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 15px;">${escapeHtml(friendlyMessage)}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="department-actions" style="justify-content: center; margin-top: 20px;">
+                <button class="btn btn-primary retry-btn" style="padding: 10px 20px;">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>
+        `;
+        
+        carouselInner.appendChild(errorItem);
+        
+        // Add button functionality
+        setTimeout(() => {
+            document.querySelector('.retry-btn')?.addEventListener('click', function() {
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Trying...';
+                this.disabled = true;
+                showLoadingState();
+                setTimeout(() => loadDepartments(), 1000);
             });
+        }, 100);
+    }
+    
+    function showDepartmentsEmptyState() {
+        const carouselInner = document.getElementById('carouselInner');
+        const carouselIndicators = document.getElementById('carouselIndicators');
+        
+        carouselInner.innerHTML = '';
+        carouselIndicators.innerHTML = '';
+        
+        const emptyItem = document.createElement('div');
+        emptyItem.className = 'carousel-item active';
+        emptyItem.innerHTML = `
+            <div class="department-header">
+                <h3 class="department-title">No Departments Found</h3>
+            </div>
+            
+            <div class="department-info" style="grid-template-columns: 1fr;">
+                <div class="info-card" style="background: #f0f8ff; border: 1px solid #d1e7ff;">
+                    <h4>Status</h4>
+                    <p style="font-size: 1.2rem; color: #3498db;">No departments available</p>
+                </div>
+            </div>
+            
+            <div class="department-description">
+                <p>There are no departments in the system yet. Click the button below to create your first department.</p>
+            </div>
+            
+            <div class="department-actions" style="justify-content: center; margin-top: 20px;">
+                <a href="departments/create">
+                    <button class="btn btn-primary" style="padding: 10px 20px;">
+                        <i class="fas fa-plus"></i> Create First Department
+                    </button>
+                </a>
+            </div>
+        `;
+        
+        carouselInner.appendChild(emptyItem);
     }
 
+    // ============================================
+    // API CALL FUNCTIONS 
+    // ============================================
+    function loadDepartments() {
+        const FUNCTION_NAME = 'loadDepartments';
+        const ENDPOINT = 'departments/list';
+        const TIMEOUT_MS = 10000;
+        
+        console.log(`[${FUNCTION_NAME}] Loading departments...`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+        
+        // fetch in new promise chain
+        return fetch(ENDPOINT, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal
+        })
+        .then(function handleResponse(response) {
+            clearTimeout(timeoutId); // Response received - cancel timeout
+
+            console.log(`[${FUNCTION_NAME}] Response received:`, {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
+
+            if (!response.ok) {
+                return response.json()
+                    .catch(function handleJsonError() {
+                        console.error(`[${FUNCTION_NAME}] Response is not valid JSON.:`, {
+                            status: response.status,
+                            statusText: response.statusText
+                        });
+                        
+                        throw {
+                            type: 'HTTP_ERROR',
+                            status: response.status,
+                            message: response.statusText,
+                            friendlyMessage: `Erro ${response.status}: ${response.statusText}`
+                        };
+                    })
+                    .then(function handleErrorJson(errJson) {
+                        // Detailed API error log
+                        console.error(`[${FUNCTION_NAME}] API Error:`, {
+                            endpoint: ENDPOINT,
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                        });
+                        
+                        throw {
+                            type: 'API_ERROR',
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                            friendlyMessage: errJson.friendly_message || `Erro: ${errJson.error}`
+                        };
+                    });
+            }
+
+            return response.json(); // If OK, parse JSON body.
+        })
+        .then(function handleSuccessData(responseBody) {
+            console.log(`[${FUNCTION_NAME}] Response body:`, {
+                success: responseBody.success,
+                hasData: !!responseBody.data,
+                dataLength: responseBody.data?.length || 0
+            });
+            
+            if (!responseBody || !responseBody.success || !responseBody.data) {
+                console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+                showErrorState(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+                return;
+            }
+            
+            if (responseBody.data.length === 0) {
+                console.log(`[${FUNCTION_NAME}] No data found. Showing empty state...`);
+                showDepartmentsEmptyState();
+                return;
+            }
+            
+            console.log(`[${FUNCTION_NAME}] ${responseBody.data.length} loaded departments. Rendering carousel...`);
+            return renderCarousel(responseBody.data);
+        })
+        .catch(function handleFetchError(err) {
+            clearTimeout(timeoutId); // An error occurred - cancel timeout
+            
+            if (err && err.name === 'AbortError') {
+                console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+                showErrorState('Request timed out. Please try again.');
+                return;
+            }
+
+            if (err.type && (err.type === 'HTTP_ERROR' || err.type === 'API_ERROR')) {
+                console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status} | Type: ${err.type}`);
+                showErrorState(err.friendlyMessage || 'Error loading departments.');
+                return;
+            }
+            
+            console.error(`[${FUNCTION_NAME}] Unexpected error:`, {
+                name: err.name,
+                message: err.message,
+            });
+
+            showErrorState('An unexpected error occurred. Please check your connection and try again.');
+        })
+        .finally(() => {
+            clearTimeout(timeoutId);
+            console.log(`[${FUNCTION_NAME}] Completed`);
+        });
+    }
+
+    function deleteDepartment(departmentID) {
+        const FUNCTION_NAME = 'deleteDepartment';
+        const ENDPOINT = 'departments/delete';
+        const TIMEOUT_MS = 10000;
+
+        console.log(`[${FUNCTION_NAME}] Deleting department ID: ${departmentID}`);
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+        // fetch in new promise chain
+        return fetch(ENDPOINT, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: departmentID }),
+            signal: controller.signal
+        })
+        .then(function handleResponse(response) {
+            clearTimeout(timeoutId); 
+            
+            console.log(`[${FUNCTION_NAME}] Response received:`, {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
+
+            if (!response.ok) {
+                return response.json()
+                    .catch(function handleJsonError() {
+                        console.error(`[${FUNCTION_NAME}] Response is not valid JSON.:`, {
+                            status: response.status,
+                            statusText: response.statusText
+                        });
+                        
+                        throw { 
+                            type: 'HTTP_ERROR',
+                            status: response.status,
+                            message: response.statusText,
+                            friendlyMessage: `Erro ${response.status}: ${response.statusText}`
+                        };
+                    })
+                    .then(function handleErrorJson(errJson) {
+                        console.error(`[${FUNCTION_NAME}] API Error:`, {
+                            endpoint: ENDPOINT,
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                        });
+                        
+                        throw {
+                            type: 'API_ERROR',
+                            status: response.status,
+                            error: errJson.error,
+                            errorMessage: errJson.error_message,
+                            friendlyMessage: errJson.friendly_message || `Erro: ${errJson.error}`
+                        };
+                    });
+            }
+            return response.json();
+        })
+        .then(function handleSuccess(responseBody) {
+            if (!responseBody || !responseBody.success)  {
+                console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+                alert(`Error deleting department: ${responseBody?.friendly_message || 'Invalid server response.'}`);
+                return;
+            }
+            
+            alert('Department deleted successfully.');
+            console.log(`[${FUNCTION_NAME}] Department deleted successfully. Reloading departments...`);
+            showLoadingState();
+            return loadDepartments(); // new promise chain
+        })
+        .catch(function handleFetchError(err){
+            clearTimeout(timeoutId); 
+
+            if (err && err.name === 'AbortError') {
+                console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+                alert('Request timed out. Please try again.');
+                return;
+            }
+            if (err.type && (err.type === 'HTTP_ERROR' || err.type === 'API_ERROR')) {
+                console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status} | Type: ${err.type}`);
+                alert(err.friendlyMessage || 'Error deleting department.');
+                return;
+            }            
+
+            console.error(`[${FUNCTION_NAME}] Unexpected error:`, {
+                name: err.name,
+                message: err.message,
+            });
+            alert('An unexpected error occurred. Please try again.');
+        })
+        .finally(() => {
+            clearTimeout(timeoutId);
+            console.log(`[${FUNCTION_NAME}] Completed`);
+        });
+    }
+
+    // ============================================
+    // DATA MANAGEMENT FUNCTIONS
+    // ============================================
+
     function renderCarousel(departments) {
+        FUNCTION_NAME = 'renderCarousel';
+        console.log(`[${FUNCTION_NAME}] Rendering carousel with data.`, departments);
         const carouselInner = document.getElementById('carouselInner');
         const carouselIndicators = document.getElementById('carouselIndicators');
 
@@ -495,127 +730,18 @@ $inlineScript = <<<'HTML'
                     <p>${escapeHtml(dept.description || 'No description available.')}</p>
                 </div>
 
-                <button class="view-role-btn view-roles-btn" data-dept-id="${dept.id}">
+                <button class="view-role-btn view-roles-btn"  data-dept-id="${dept.id}" data-dept-name="${escapeHtml(dept.name)}">
                     <i class="fas fa-info-circle"></i> View Details
                 </button>
             `;
 
             carouselInner.appendChild(carouselItem);
         });
-    }
 
-    function showConnectionError(message) {
-        const carouselInner = document.getElementById('carouselInner');
-        const carouselIndicators = document.getElementById('carouselIndicators');
-        
-        carouselInner.innerHTML = '';
-        carouselIndicators.innerHTML = '';
-        
-        const errorItem = document.createElement('div');
-        errorItem.className = 'carousel-item active';
-        errorItem.innerHTML = `
-            <div class="department-header">
-                <h3 class="department-title" style="color: #e74c3c; display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-exclamation-triangle"></i> Connection Error
-                </h3>
-            </div>
-            
-            <div class="department-info" style="grid-template-columns: 1fr;">
-                <div class="info-card" style="background: linear-gradient(135deg, #ffeaea 0%, #ffcccc 100%); border: 2px solid #ff9999; min-height: 200px; display: flex; align-items: center; justify-content: center;">
-                    <div style="text-align: center; width: 100%;">
-                        <i class="fas fa-database fa-3x" style="color: #e74c3c; margin-bottom: 20px;"></i>
-                        <h4 style="color: #c0392b; font-size: 1.2rem; margin-bottom: 10px;">Database Connection Failed</h4>
-                        <p style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 15px;">${escapeHtml(message)}</p>
-                        <div style="background: rgba(231, 76, 60, 0.1); padding: 10px; border-radius: 5px; margin-top: 15px;">
-                            <p style="color: #c0392b; margin: 0; font-size: 0.85rem;">
-                                <i class="fas fa-lightbulb"></i> 
-                                <strong>Troubleshooting tips:</strong> 
-                                Check if the database server is running, verify your connection settings, or contact your system administrator.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="department-description">
-                <p>We're unable to connect to the database at the moment. This might be due to:</p>
-                <ul style="text-align: left; margin: 15px 0; padding-left: 20px;">
-                    <li>Database server is down or restarting</li>
-                    <li>Network connectivity issues</li>
-                    <li>Incorrect database configuration</li>
-                    <li>Temporary server maintenance</li>
-                </ul>
-            </div>
-            
-            <div class="department-actions" style="justify-content: center; margin-top: 20px; display: flex; gap: 10px;">
-                <button class="btn btn-primary retry-btn" style="padding: 10px 20px;">
-                    <i class="fas fa-redo"></i> Try Again
-                </button>
-                <button class="btn btn-outline-secondary contact-support-btn" style="padding: 10px 20px;">
-                    <i class="fas fa-headset"></i> Contact Support
-                </button>
-            </div>
-        `;
-        
-        carouselInner.appendChild(errorItem);
-        
-        // Add button functionality
-        setTimeout(() => {
-            document.querySelector('.retry-btn')?.addEventListener('click', function() {
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Trying...';
-                this.disabled = true;
-                showLoadingState();
-                setTimeout(() => loadDepartments(), 1000); // Pequeno delay para mostrar o estado de carregamento
-            });
-            
-            document.querySelector('.contact-support-btn')?.addEventListener('click', function() {
-                alert('Please contact system administrator or IT support team to resolve database connectivity issues.');
-            });
-        }, 100);
-    }
-    
-    function showNoDepartmentsMessage() {
-        const carouselInner = document.getElementById('carouselInner');
-        const carouselIndicators = document.getElementById('carouselIndicators');
-        
-        carouselInner.innerHTML = '';
-        carouselIndicators.innerHTML = '';
-        
-        const emptyItem = document.createElement('div');
-        emptyItem.className = 'carousel-item active';
-        emptyItem.innerHTML = `
-            <div class="department-header">
-                <h3 class="department-title">No Departments Found</h3>
-            </div>
-            
-            <div class="department-info" style="grid-template-columns: 1fr;">
-                <div class="info-card" style="background: #f0f8ff; border: 1px solid #d1e7ff;">
-                    <h4>Status</h4>
-                    <p style="font-size: 1.2rem; color: #3498db;">No departments available</p>
-                </div>
-            </div>
-            
-            <div class="department-description">
-                <p>There are no departments in the system yet. Click the button below to create your first department.</p>
-            </div>
-            
-            <div class="department-actions" style="justify-content: center; margin-top: 20px;">
-                <a href="departments/create">
-                    <button class="btn btn-primary" style="padding: 10px 20px;">
-                        <i class="fas fa-plus"></i> Create First Department
-                    </button>
-                </a>
-            </div>
-        `;
-        
-        carouselInner.appendChild(emptyItem);
-    }
-
-    function initializeCarousel() {
-        $('#departmentsCarousel').carousel({
-            interval: false,
-            wrap: true
-        });
+        // At the end of rendering, initialize carousel and attach events
+        $('#departmentsCarousel').carousel({ interval: false, wrap: true });
+        attachEventListeners();
+        console.log(`[${FUNCTION_NAME}] Carousel rendering complete with ${departments.length} departments.`);
     }
 
     function attachEventListeners() {
@@ -645,34 +771,22 @@ $inlineScript = <<<'HTML'
             document.querySelectorAll('.view-roles-btn').forEach(btn => {
                 btn.addEventListener('click', function () {
                     const deptId = this.getAttribute('data-dept-id');
-                    window.location.href = `departments/show?id=${deptId}`;
+                    const deptName = this.getAttribute('data-dept-name');
+
+                    const params = new URLSearchParams({
+                        id: deptId,
+                        name: deptName
+                    });
+
+                    window.location.href = `departments/show?${params.toString()}`;
                 });
             });
         }, 150);
     }
 
-    function deleteDepartment(departmentId) {
-        fetch('departments/delete', {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id: departmentId })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Department successfully deleted!');
-                    loadDepartments();
-                } else {
-                    alert('Error deleting department: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                alert('Error deleting department: ' + error.message);
-            });
-    }
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
 
     function escapeHtml(unsafe) {
         return unsafe

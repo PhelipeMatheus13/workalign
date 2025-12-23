@@ -97,13 +97,139 @@ class Departments
          if (!$department) {
             return [
                'success' => false,
-               'error' => 'NOT_FOUND'
+               'error' => 'NOT_FOUND',
+               'message' => 'Department not found'
             ];
          }
 
          return [
             'success' => true,
             'department' => $department
+         ];
+      } catch (PDOException $e) {
+         return [
+            'success' => false,
+            'error' => 'DB_OPERATION_FAILED',
+            'message' => $e->getMessage()
+         ];
+      } catch (Exception $e) {
+         return [
+            'success' => false,
+            'error' => 'INTERNAL_ERROR',
+            'message' => $e->getMessage()
+         ];
+      }
+   }
+
+   public function getDepartmentsWithRoles() {
+      try {
+         $db = Database::connect();
+         $stmt = $db->prepare('
+            SELECT DISTINCT 
+               d.id AS department_id,
+               d.name AS department_name,
+               d.short_name AS department_short_name
+            FROM departments d
+            INNER JOIN roles r ON d.id = r.department_id
+            WHERE r.id IS NOT NULL
+            ORDER BY d.name
+         ');
+         
+         $success = $stmt->execute();
+
+         if (!$success) {
+            $errorInfo = $stmt->errorInfo();
+            return [
+               'success' => false,
+               'error' => 'DATABASE_ERROR',
+               'message' => $errorInfo[2]
+            ];
+         }
+
+         $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+         // For each department, identify its functions.
+         $result = [];
+         foreach ($departments as $dept) {
+            $rolesStmt = $db->prepare('
+               SELECT 
+                  id AS role_id,
+                  name AS role_name
+               FROM roles 
+               WHERE department_id = :department_id
+               ORDER BY name
+         ');
+         
+            $success = $rolesStmt->execute([':department_id' => $dept['department_id']]);
+            if (!$success) {
+               $errorInfo = $rolesStmt->errorInfo();
+               return [
+                  'success' => false,
+                  'error' => 'DATABASE_ERROR',
+                  'message' => $errorInfo[2]
+               ];
+            }
+
+            $roles = $rolesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Use short_name if available, otherwise use the full name.
+            $displayName = !empty($dept['department_short_name'])
+               ? $dept['department_short_name']
+               : $dept['department_name'];
+
+            $result[] = [
+               'department_id' => $dept['department_id'],
+               'department_name' => $dept['department_name'],
+               'department_display' => $displayName,
+               'roles' => $roles
+            ];   
+         } 
+         return [
+            'success' => true,
+            'departments_with_roles' => $result
+         ];
+      } catch (PDOException $e) {
+         return [
+            'success' => false,
+            'error' => 'DB_OPERATION_FAILED',
+            'message' => $e->getMessage()
+         ];
+      } catch (Exception $e) {
+         return [
+            'success' => false,
+            'error' => 'INTERNAL_ERROR',
+            'message' => $e->getMessage()
+         ];
+      }
+   }
+
+   public function getNameByID($id) {
+      try {
+         $db = Database::connect();
+         $stmt = $db->prepare('SELECT name FROM departments WHERE id = :id');
+         $success = $stmt->execute([':id' => $id]);
+         if (!$success) {
+            $errorInfo = $stmt->errorInfo();
+            return [
+               'success' => false,
+               'error' => 'DATABASE_ERROR',
+               'message' => $errorInfo[2]
+            ];
+         }
+
+         $department = $stmt->fetch(PDO::FETCH_ASSOC);
+
+         if (!$department) {
+            return [
+               'success' => false,
+               'error' => 'NOT_FOUND',
+               'message' => 'Department not found'
+            ];
+         }
+
+         return [
+            'success' => true,
+            'department_name' => $department['name']
          ];
       } catch (PDOException $e) {
          return [
@@ -162,89 +288,6 @@ class Departments
          return [
             'success' => true,
             'list_roles' => $roles
-         ];
-      } catch (PDOException $e) {
-         return [
-            'success' => false,
-            'error' => 'DB_OPERATION_FAILED',
-            'message' => $e->getMessage()
-         ];
-      } catch (Exception $e) {
-         return [
-            'success' => false,
-            'error' => 'INTERNAL_ERROR',
-            'message' => $e->getMessage()
-         ];
-      }
-   }
-
-   public function getDepartmentsWithRoles()
-   {
-      try {
-         $db = Database::connect();
-         $stmt = $db->prepare('
-            SELECT DISTINCT 
-               d.id AS department_id,
-               d.name AS department_name,
-               d.short_name AS department_short_name
-            FROM departments d
-            INNER JOIN roles r ON d.id = r.department_id
-            WHERE r.id IS NOT NULL
-            ORDER BY d.name
-         ');
-
-         $success = $stmt->execute();
-         if (!$success) {
-            $errorInfo = $stmt->errorInfo();
-            return [
-               'success' => false,
-               'error' => 'DATABASE_ERROR',
-               'message' => $errorInfo[2]
-            ];
-         }
-
-         $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-         // For each department, identify its functions.
-         $result = [];
-         foreach ($departments as $dept) {
-            $rolesStmt = $db->prepare('
-               SELECT 
-                  id AS role_id,
-                  name AS role_name
-               FROM roles 
-               WHERE department_id = :department_id
-               ORDER BY name
-            ');
-
-            $success = $rolesStmt->execute([':department_id' => $dept['department_id']]);
-            if (!$success) {
-               $errorInfo = $rolesStmt->errorInfo();
-               return [
-                  'success' => false,
-                  'error' => 'DATABASE_ERROR',
-                  'message' => $errorInfo[2]
-               ];
-            }
-
-            $roles = $rolesStmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // Use short_name if available, otherwise use the full name.
-            $displayName = !empty($dept['department_short_name'])
-               ? $dept['department_short_name']
-               : $dept['department_name'];
-
-            $result[] = [
-               'department_id' => $dept['department_id'],
-               'department_name' => $dept['department_name'],
-               'department_display' => $displayName,
-               'roles' => $roles
-            ];
-         }
-
-         return [
-            'success' => true,
-            'data' => $result
          ];
       } catch (PDOException $e) {
          return [
@@ -373,7 +416,8 @@ class Departments
          if ($stmt->rowCount() === 0) {
             return [
                'success' => false,
-               'error' => 'NOT_FOUND'
+               'error' => 'NOT_FOUND',
+               'message' => 'Department not found '
             ];
          }
 
@@ -469,7 +513,7 @@ class Departments
 
          return [
             'success' => true,
-            'department_distribution' => $rows // cada item tem department_name e employee_count
+            'department_distribution' => $rows // each item has department_name and employee_count
          ];
       } catch (PDOException $e) {
          return [

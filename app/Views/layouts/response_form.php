@@ -1,29 +1,28 @@
 <?php
 /**
- * Layout de resposta reutilizável para formulários
+ * Reusable response layout for forms
  * 
- * Variáveis necessárias:
- * - $pageTitle: Título da página
- * - $message: Mensagem principal a ser exibida
- * - $type: 'success' ou 'error' (determina cor e ícone)
- * - $redirectUrl: URL para redirecionamento (opcional)
- * - $redirectTime: Tempo em ms para redirecionamento automático (padrão: 3000)
- * - $showBackButton: Se true, mostra botão de voltar (padrão: true)
- * - $backUrl: URL para o botão voltar (opcional)
+ * Required variables:
+* - $pageTitle: Page title
+* - $message: Main message to be displayed
+* - $type: 'success' or 'error' (determines color and icon)
+* - $redirectUrl: URL for redirection (optional)
+* - $redirectTime: Time in ms for automatic redirection (default: 3000)
+* - $showBackButton: If true, shows back button (default: true)
+* - $backUrl: URL for the back button (optional)
  */
 
-// Valores padrão
+// Default values
 $redirectTime = $redirectTime ?? 5000;
 $showBackButton = $showBackButton ?? true;
 $backUrl = $backUrl ?? 'javascript:history.back()';
 $menuActive = $menuActive ?? '';
 
-// Configurações baseadas no tipo
+// Type-based settings
 $icon = $type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
 $title = $type === 'success' ? 'Success!' : 'Error!';
 $alertClass = $type === 'success' ? 'alert-success' : 'alert-danger';
 
-// Estilos específicos para a página de resposta
 $styles = <<<'HTML'
 <style>
     html, body {
@@ -185,7 +184,7 @@ $styles = <<<'HTML'
 </style>
 HTML;
 
-// Conteúdo dinâmico
+// Dynamic content
 $content = <<<HTML
 <div class="response-container">
     <div class="response-card">
@@ -201,7 +200,7 @@ $content = <<<HTML
 
 HTML;
 
-// Adiciona detalhes se existirem
+// Add details if they exist.
 if (!empty($details)) {
     $content .= <<<HTML
         <div class="response-details">
@@ -214,7 +213,7 @@ $content .= <<<HTML
         <div class="response-actions">
 HTML;
 
-// Botão de voltar
+// Back button
 if ($showBackButton) {
     $content .= <<<HTML
             <a href="{$backUrl}" class="btn btn-back">
@@ -223,7 +222,7 @@ if ($showBackButton) {
 HTML;
 }
 
-// Botão primário (se especificado)
+// Primary button (if specified)
 if (!empty($primaryButton)) {
     $primaryBtnText = $primaryButton['text'] ?? 'Continue';
     $primaryBtnUrl = $primaryButton['url'] ?? '#';
@@ -240,7 +239,7 @@ $content .= <<<HTML
         </div>
 HTML;
 
-// Contador de redirecionamento
+// Redirect counter
 if (!empty($redirectUrl)) {
     $redirectSeconds = $redirectTime / 1000;
     $content .= <<<HTML
@@ -257,10 +256,9 @@ HTML;
 
 if (!empty($redirectUrl)) {
 
-    // Começa script
     $inlineScript = "<script>document.addEventListener('DOMContentLoaded', function () {";
 
-    // Se menuActive foi enviado, ativamos o menu
+    // If menuActive was sent, we activated the menu.
     if (!empty($menuActive)) {
         $inlineScript .= "
             const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
@@ -274,7 +272,7 @@ if (!empty($redirectUrl)) {
         ";
     }
 
-    // Countdown (sempre incluído se há redirectUrl)
+    // Countdown (always included if there is a redirectUrl)
     $inlineScript .= "
         const countdownElement = document.getElementById('countdown');
         let seconds = {$redirectSeconds};
@@ -297,7 +295,6 @@ if (!empty($redirectUrl)) {
         });
     ";
 
-    // Finaliza script
     $inlineScript .= "});</script>";
 }
 

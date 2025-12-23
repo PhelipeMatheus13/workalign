@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Core\ErrorMapper;
 use App\Core\Response;
 use App\Models\Departments;
 use App\Core\Request;
@@ -19,19 +20,12 @@ class DepartmentsController
         $result = $model->listDepartments();
 
         if (!$result['success']) {
-            $errorMap = [
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
                 'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([
@@ -45,81 +39,36 @@ class DepartmentsController
         return Response::view(template: 'departments/show');
     }
 
-    public function listRoles(Request $request)
-    {
-        $id = $request->input('id');
-        // Validate ID
-        if (!$id || !is_numeric($id)) {
-            return Response::json([
-                'success' => false,
-                'error' => 'INVALID_INPUT',
-                'message' => 'Invalid department ID provided.'
-            ], 400);
-        }
-
-        $model = new Departments();
-        $result = $model->listDepartmentRoles($id);
-
-        if (!$result['success']) {
-            $errorMap = [
-                'NOT_FOUND' => ['message' => "Department id=$id not found.", 'code' => 404],
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
-            return Response::json([
-                'success' => false,
-                'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
-        }
-
-        return Response::json([
-            'success' => true,
-            'data' => $result['list_roles']
-        ]);
-    }
-
-
-    public function listWithRoles()
+    public function listDepartmentsWithRoles()
     {
         $model = new Departments();
         $result = $model->getDepartmentsWithRoles();
 
         if (!$result['success']) {
-            $errorMap = [
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
                 'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([
             'success' => true,
-            'data' => $result['data']
+            'data' => $result['departments_with_roles']
         ]);
     }
+
 
     public function get(Request $request)
     {
         $id = $request->input('id');
-        // Validate ID
         if (!$id || !is_numeric($id)) {
             return Response::json([
                 'success' => false,
                 'error' => 'INVALID_INPUT',
-                'message' => 'Invalid department ID provided.'
+                'error_message' => "Invalid department ID: $id.",
+                'friendly_message' => 'The provided department_id is invalid.'
             ], 400);
         }
 
@@ -127,19 +76,12 @@ class DepartmentsController
         $result = $model->getDepartmentByID($id);
 
         if (!$result['success']) {
-            $errorMap = [
-                'NOT_FOUND' => ['message' => "Department id=$id not found.", 'code' => 404],
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
                 'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([
@@ -223,17 +165,9 @@ class DepartmentsController
         $result = $model->createDepartment($data);
 
         if (!$result['success']) {
-            $errorMap = [
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return $this->renderResponse(
                 'Registration Error',
-                $errorConfig['message'],
+                $result['message'],
                 'error',
                 [
                     'showBackButton' => true,
@@ -261,7 +195,7 @@ class DepartmentsController
 
     public function update(Request $request)
     {
-        $department_id = $request->input('id');
+        $departmentID = $request->input('id');
         $data = [
             'name' => $request->input('name'),
             'short_name' => $request->input('short_name'),
@@ -285,63 +219,42 @@ class DepartmentsController
 
         if (!empty($errorMessages)) {
             $errorMessage = implode('<br>', $errorMessages);
-            return $this->renderResponse(
-                'Validation Error',
-                $errorMessage,
-                'error',
-                [
-                    'showBackButton' => true,
-                    'backUrl' => 'departments/update?id=' . $department_id
-                ]
-            );
+            return Response::JSON([
+                'success' => false,
+                'error' => 'VALIDATION_ERROR',
+                'error_message' => $errorMessage,
+                'friendly_message' => 'Please fill in all required fields.'
+            ], 400);
         }
 
         $model = new Departments();
-        $result = $model->updateDepartment($department_id, $data);
+        $result = $model->updateDepartment($departmentID, $data);
 
         if (!$result['success']) {
-            $errorMap = [
-                'NOT_FOUND' => ['message' => "Department id=$department_id not found.", 'code' => 404],
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
-            return $this->renderResponse(
-                'Update Error',
-                $errorConfig['message'],
-                'error',
-                [
-                    'showBackButton' => true,
-                    'backUrl' => 'departments/update?id=' . $department_id
-                ]
-            );
+            return Response::json([
+                'success' => false,
+                'error' => $result['error'],
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         $departmentName = $data['name'];
-        return $this->renderResponse(
-            'Department Updated',
-            "Department <strong>$departmentName</strong> has been successfully updated!",
-            'success',
-            [
-                'redirectUrl' => 'departments',
-                'redirectTime' => 2000,
-            ]
-        );
+        return Response::json([
+            'success' => true,
+            'message' => "Department $departmentName successfully updated."
+        ]);
     }
 
     public function delete(Request $request)
     {
         $id = $request->input('id');
-
-        // Validate ID
         if (!$id || !is_numeric($id)) {
             return Response::json([
                 'success' => false,
                 'error' => 'INVALID_INPUT',
-                'message' => 'Invalid department ID provided.'
+                'error_message' => "Invalid department ID: $id.",
+                'friendly_message' => 'The provided department ID is invalid.'
             ], 400);
         }
 
@@ -349,20 +262,12 @@ class DepartmentsController
         $result = $model->deleteDepartment($id);
 
         if (!$result['success']) {
-            $errorMap = [
-                'NOT_FOUND' => ['message' => 'Department not found.', 'code' => 404],
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
                 'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([

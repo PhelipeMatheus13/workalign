@@ -1,5 +1,4 @@
 <?php
-// App/Core/ErrorMapper.php
 
 namespace App\Core;
 

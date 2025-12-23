@@ -297,26 +297,30 @@ HTML;
 
 $inlineScript = <<<'HTML'
 <script>
-   document.addEventListener('DOMContentLoaded', function () {
-      const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-      menuItems.forEach(item => {
-         item.classList.remove('active');
-         if (item.getAttribute('data-menu') === 'departments') {
-            item.classList.add('active');
-         }
-      });
+   // ============================================
+   // INITIALIZATION
+   // ============================================
+    
+   // Global variables
+   let departmentID;
 
-      localStorage.setItem('activeMenu', 'departments');
+   document.addEventListener('DOMContentLoaded', function () {
+      console.log('Edit Department Page');
 
       // Get department ID from URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const departmentId = urlParams.get('id');
+      const params = Object.fromEntries(new URLSearchParams(window.location.search));
+      ({ id: departmentID } = params);
 
-      if (departmentId) {
-         loadDepartmentData(departmentId);
-      } else {
-         showError('Department ID is missing in the URL.');
+      if (!isValidParam(departmentID)) {
+         showErrorState('Department ID is missing in the URL.');
+         console.error('Department ID is missing in the URL:', departmentID);
+         return;
       }
+
+      console.log('Editing department ID:', departmentID);
+
+      showLoadingState();
+      loadDepartmentData(departmentID);
 
       // Event listeners
       document.getElementById('cancelBtn').addEventListener('click', function () {
@@ -327,146 +331,394 @@ $inlineScript = <<<'HTML'
 
       document.getElementById('departmentForm').addEventListener('submit', function (e) {
          e.preventDefault();
-         saveDepartmentChanges(departmentId);
+         saveDepartmentChanges(departmentID);
       });
-
-      // Load department data
-      function loadDepartmentData(departmentId) {
-         fetch(`departments/get?id=${departmentId}`)
-            .then(response => {
-               if (!response.ok) {
-                  // If the response is not ok, we try to read the error message from the JSON.
-                  return response.json().then(errorData => {
-                     throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-                  });
-               }
-               return response.json();
-            })
-            .then(response => {
-               if (response.success) {
-                  populateDepartmentForm(response.data);
-               } else {
-                  throw new Error(response.error || 'Failed to load department data');
-               }
-            })
-            .catch(error => {
-               console.error('Error:', error);
-               showError('Error loading department data: ' + error.message);
-            });
-      }
-
-      // Populate department form
-      function populateDepartmentForm(department) {
-         document.getElementById('loadingState').style.display = 'none';
-         document.getElementById('departmentForm').style.display = 'block';
-
-         document.getElementById('name').value = department.name || '';
-         document.getElementById('shortName').value = department.short_name || '';
-         document.getElementById('description').value = department.description || '';
-         document.getElementById('status').value = department.status || '';
-      }
-
-      // Save department changes
-      function saveDepartmentChanges(departmentId) {
-         if (!confirm('Are you sure you want to save these changes?')) {
-            return;
-         }
-
-         const form = document.getElementById('departmentForm');
-         const formData = new FormData(form);
-         const saveBtn = document.getElementById('saveBtn');
-         const cancelBtn = document.getElementById('cancelBtn');
-
-         // Validate data before sending.
-         const name = formData.get('name').trim();
-         const shortName = formData.get('short_name').trim();
-         const status = formData.get('status');
-         const description = formData.get('description').trim();
-
-         if (!name || !status || !description) {
-            showError('Please fill in all required fields');
-            return;
-         }
-
-         const departmentData = {
-            id: parseInt(departmentId),
-            name: name,
-            short_name: shortName,
-            description: description,
-            status: status
-         };
-
-         const originalSaveText = saveBtn.innerHTML;
-
-         // Immediate visual feedback
-         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Changes...';
-         saveBtn.disabled = true;
-
-         // Hide the cancel button after confirming changes. 
-         cancelBtn.style.display = 'none';
-
-         console.log('Sending data:', departmentData);
-
-         // CORREÇÃO: Enviar para a rota correta do controller
-         fetch('departments/update', {
-            method: 'PUT',
-            headers: {
-               'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(departmentData)
-         })
-         .then(response => {
-            // Primeiro, verificar se a resposta é HTML
-            const contentType = response.headers.get('content-type');
-            
-            if (contentType && contentType.includes('text/html')) {
-               // Se for HTML, retornar o texto HTML
-               return response.text();
-            } else {
-               // Se não for HTML, tentar JSON como fallback
-               return response.json().then(data => {
-                  throw new Error(`Unexpected response type. Expected HTML, got: ${contentType}`);
-               });
-            }
-         })
-         .then(html => {
-            // Substituir o conteúdo da página atual pelo HTML da resposta
-            document.open();
-            document.write(html);
-            document.close();
-         })
-         .catch(error => {
-            console.error('Error:', error);
-            let errorMessage = 'Error updating department: ';
-            
-            if (error.message.includes('Unexpected token')) {
-               errorMessage += 'Server returned invalid response. Please check server logs.';
-            } else {
-               errorMessage += error.message;
-            }
-
-            // Restaurar botões em caso de erro
-            saveBtn.innerHTML = originalSaveText;
-            saveBtn.disabled = false;
-            cancelBtn.style.display = 'block';
-            showError(errorMessage);
-         });
-      }
-
-      function showError(message) {
-         document.getElementById('loadingState').style.display = 'none';
-         const departmentCard = document.getElementById('departmentCard');
-         departmentCard.innerHTML = `<div class="error-message">${message}</div>`;
-      }
-
-      function showSuccess(message) {
-         const departmentCard = document.getElementById('departmentCard');
-         const successDiv = document.createElement('div');
-         successDiv.className = 'success-message';
-         successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-         departmentCard.insertBefore(successDiv, departmentCard.firstChild);
-      }
    });
+
+   // ============================================
+   // UI STATE MANAGEMENT FUNCTIONS
+   // ============================================
+
+   function showLoadingState() {
+      const loadingState = document.getElementById('loadingState');
+      const departmentForm = document.getElementById('departmentForm');
+      
+      if (loadingState) loadingState.style.display = 'block';
+      if (departmentForm) departmentForm.style.display = 'none';
+   }
+
+   function showFormState() {
+      const loadingState = document.getElementById('loadingState');
+      const departmentForm = document.getElementById('departmentForm');
+      
+      if (loadingState) loadingState.style.display = 'none';
+      if (departmentForm) departmentForm.style.display = 'block';
+   }
+
+   function showErrorState(message) {
+      const departmentCard = document.getElementById('departmentCard');
+      const loadingState = document.getElementById('loadingState');
+      const departmentForm = document.getElementById('departmentForm');
+      
+      if (loadingState) loadingState.style.display = 'none';
+      if (departmentForm) departmentForm.style.display = 'none';
+      
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-message';
+      errorDiv.innerHTML = `
+         <i class="fas fa-exclamation-circle fa-2x" style="margin-bottom: 15px;"></i>
+         <h4 style="color: #c0392b; margin-bottom: 10px;">Unable to Load Department Data</h4>
+         <p>${escapeHtml(message)}</p>
+         <button class="btn btn-primary retry-btn" style="margin-top: 15px;">
+               <i class="fas fa-redo"></i> Try Again
+         </button>
+      `;
+      
+      departmentCard.innerHTML = '';
+      departmentCard.appendChild(errorDiv);
+      
+      // Add retry button functionality
+      setTimeout(() => {
+         document.querySelector('.retry-btn')?.addEventListener('click', function() {
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Trying...';
+            this.disabled = true;
+            showLoadingState();
+            setTimeout(() => loadDepartmentData(departmentID), 1000);
+         });
+      }, 100);
+   }
+
+   function showSaveSuccessState(message) {
+      const departmentCard = document.getElementById('departmentCard');
+      const loadingState = document.getElementById('loadingState');
+      const departmentForm = document.getElementById('departmentForm');
+      
+      if (loadingState) loadingState.style.display = 'none';
+      if (departmentForm) departmentForm.style.display = 'none';
+      
+      const successDiv = document.createElement('div');
+      successDiv.className = 'success-message';
+      successDiv.innerHTML = `
+         <i class="fas fa-check-circle fa-2x" style="margin-bottom: 15px;"></i>
+         <h4 style="color: #155724; margin-bottom: 10px;">Success!</h4>
+         <p>${escapeHtml(message)}</p>
+         <p style="font-size: 0.9rem; margin-top: 15px; color: #6c757d;">
+            You will be redirected to departments page in <span id="countdown">3</span> seconds...
+         </p>
+      `;
+      
+      departmentCard.innerHTML = '';
+      departmentCard.appendChild(successDiv);
+      
+      // Start countdown
+      let seconds = 3; // Redirect timer
+      const countdownElement = document.getElementById('countdown');
+      const countdownInterval = setInterval(() => {
+         seconds--;
+         if (countdownElement) {
+            countdownElement.textContent = seconds;
+         }
+         
+         if (seconds <= 0) {
+            clearInterval(countdownInterval);
+            window.location.href = 'departments';
+         }
+      }, 1000);
+   }
+
+   // ============================================
+   // API CALL FUNCTIONS (Standard Pattern)
+   // ============================================
+
+   function loadDepartmentData(departmentID) {
+      const FUNCTION_NAME = 'loadDepartmentData';
+      const ENDPOINT = `departments/get?id=${departmentID}`;
+      const TIMEOUT_MS = 10000;
+      
+      console.log(`[${FUNCTION_NAME}] Loading department ID: ${departmentID}`);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      return fetch(ENDPOINT, {
+         method: 'GET',
+         headers: { 'Content-Type': 'application/json' },
+         signal: controller.signal
+      })
+      .then(function handleResponse(response) {
+         clearTimeout(timeoutId);
+         
+         console.log(`[${FUNCTION_NAME}] Response received:`, {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
+         });
+
+         if (!response.ok) {
+               return response.json()
+                  .catch(function handleJsonError() {
+                     console.error(`[${FUNCTION_NAME}] Response is not valid JSON:`, {
+                        status: response.status,
+                        statusText: response.statusText
+                     });
+                     
+                     throw {
+                        type: 'HTTP_ERROR',
+                        status: response.status,
+                        message: response.statusText,
+                        friendlyMessage: `Error ${response.status}: ${response.statusText}`
+                     };
+                  })
+                  .then(function handleErrorJson(errJson) {
+                     console.error(`[${FUNCTION_NAME}] API Error:`, {
+                        endpoint: ENDPOINT,
+                        status: response.status,
+                        error: errJson.error,
+                        errorMessage: errJson.error_message,
+                     });
+                     
+                     throw {
+                        type: 'API_ERROR',
+                        status: response.status,
+                        error: errJson.error,
+                        errorMessage: errJson.error_message,
+                        friendlyMessage: errJson.friendly_message || `Error: ${errJson.error}`
+                     };
+                  });
+         }
+
+         return response.json();
+      })
+      .then(function handleSuccessData(responseBody) {
+         console.log(`[${FUNCTION_NAME}] Response body:`, {
+               success: responseBody.success,
+               hasData: !!responseBody.data
+         });
+
+         if (!responseBody || !responseBody.success || !responseBody.data) {
+            console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+            showErrorState(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+            return;
+         }
+
+         console.log(`[${FUNCTION_NAME}] Department data loaded successfully.`);
+         return populateDepartmentForm(responseBody.data);
+      })
+      .catch(function handleFetchError(err) {
+         clearTimeout(timeoutId);
+
+         if (err && err.name === 'AbortError') {
+            console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+            showErrorState('Request timed out. Please try again.');
+            return;
+         }
+
+         if (err.type && (err.type === 'HTTP_ERROR' || err.type === 'API_ERROR')) {
+            console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status} | Type: ${err.type}`);
+            showErrorState(err.friendlyMessage || 'Error loading department data.');
+            return;
+         }
+
+         console.error(`[${FUNCTION_NAME}] Unexpected error loading department data:`, {
+            name: err.name,
+            message: err.message,
+         });
+         
+         showErrorState('An unexpected error occurred. Please check your connection and try again.');
+      })
+      .finally(() => {
+         clearTimeout(timeoutId);
+         console.log(`[${FUNCTION_NAME}] Completed`);
+      });
+   }
+
+   function saveDepartmentChanges(departmentID) {
+      const FUNCTION_NAME = 'saveDepartmentChanges';
+      const ENDPOINT = 'departments/update';
+      const TIMEOUT_MS = 10000;
+      
+      console.log(`[${FUNCTION_NAME}] Saving changes for department ID: ${departmentID}`);
+
+      // Validate data before sending
+      const name = document.getElementById('name').value.trim();
+      const shortName = document.getElementById('shortName').value.trim();
+      const status = document.getElementById('status').value;
+      const description = document.getElementById('description').value.trim();
+
+      if (!name || !status || !description) {
+         alert('Please fill in all required fields');
+         return;
+      }
+
+      if (!confirm('Are you sure you want to save these changes?')) {
+         return;
+      }
+
+      const departmentData = {
+         id: parseInt(departmentID),
+         name: name,
+         short_name: shortName,
+         description: description,
+         status: status
+      };
+
+      const saveBtn = document.getElementById('saveBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const originalSaveText = saveBtn.innerHTML;
+
+      // Visual feedback
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Changes...';
+      saveBtn.disabled = true;
+      cancelBtn.style.display = 'none';
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      console.log(`[${FUNCTION_NAME}] Sending data:`, departmentData);
+
+      return fetch(ENDPOINT, {
+         method: 'PUT',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(departmentData),
+         signal: controller.signal
+      })
+      .then(function handleResponse(response) {
+         clearTimeout(timeoutId);
+
+         console.log(`[${FUNCTION_NAME}] Response received:`, {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
+         });
+
+         if (!response.ok) {
+               return response.json()
+                  .catch(function handleJsonError() {
+                     console.error(`[${FUNCTION_NAME}] Response is not valid JSON.:`, {
+                        status: response.status,
+                        statusText: response.statusText
+                     });
+                     
+                     throw {
+                        type: 'HTTP_ERROR',
+                        status: response.status,
+                        message: response.statusText,
+                        friendlyMessage: `Erro ${response.status}: ${response.statusText}`
+                     };
+                  })
+                  .then(function handleErrorJson(errJson) {
+                     console.error(`[${FUNCTION_NAME}] API Error:`, {
+                        endpoint: ENDPOINT,
+                        status: response.status,
+                        error: errJson.error,
+                        errorMessage: errJson.error_message,
+                     });
+                     
+                     throw {
+                        type: 'API_ERROR',
+                        status: response.status,
+                        error: errJson.error,
+                        errorMessage: errJson.error_message,
+                        friendlyMessage: errJson.friendly_message || `Erro: ${errJson.error}`
+                     };
+                  });
+         }
+
+         return response.json();
+      })
+      .then(function handleSuccess(responseBody) {
+         if (!responseBody || !responseBody.success) {
+            console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+            showErrorState(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+            return;
+         }  
+         
+         console.log(`[${FUNCTION_NAME}] Department updated successfully.`);
+         showSaveSuccessState(responseBody.message || 'Department successfully updated.');
+      })
+      .catch(function handleFetchError(err) {
+         clearTimeout(timeoutId);
+
+         if (err && err.name === 'AbortError') {
+            console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+            alert('Request timed out. Please try again.');
+            restoreButtons(saveBtn, cancelBtn, originalSaveText);
+            return;
+         }
+
+         if (err.type && (err.type === 'API_ERROR' || err.type === 'HTTP_ERROR')) {
+            console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status || 'N/A'} | Type: ${err.type}`);
+            
+            // Show error message in form context
+            const errorMessage = err.friendlyMessage || 'Error updating department.';
+            showFormState(); // Ensure form is visible
+            alert(errorMessage);
+            restoreButtons(saveBtn, cancelBtn, originalSaveText);
+            return;
+         }
+
+         console.error(`[${FUNCTION_NAME}] Unexpected error:`, {
+            name: err.name,
+            message: err.message,
+         });
+
+         alert('An unexpected error occurred. Please check your connection and try again.');
+         restoreButtons(saveBtn, cancelBtn, originalSaveText);
+      })
+      .finally(() => {
+         clearTimeout(timeoutId);
+         console.log(`[${FUNCTION_NAME}] Completed`);
+      });
+   }
+
+   // ============================================
+   // DATA MANAGEMENT FUNCTIONS
+   // ============================================
+
+   function populateDepartmentForm(department) {
+      const FUNCTION_NAME = 'populateDepartmentForm';
+      console.log(`[${FUNCTION_NAME}] Populating form with department data:`, department);
+
+      const loadingState = document.getElementById('loadingState');
+      const departmentForm = document.getElementById('departmentForm');
+      
+      if (loadingState) loadingState.style.display = 'none';
+      if (departmentForm) departmentForm.style.display = 'block';
+
+      document.getElementById('name').value = department.name || '';
+      document.getElementById('shortName').value = department.short_name || '';
+      document.getElementById('description').value = department.description || '';
+      document.getElementById('status').value = department.status || '';
+      
+      console.log(`[${FUNCTION_NAME}] Form populated successfully`);
+   }
+
+   function restoreButtons(saveBtn, cancelBtn, originalSaveText) {
+      saveBtn.innerHTML = originalSaveText;
+      saveBtn.disabled = false;
+      cancelBtn.style.display = 'block';
+   }
+
+   // ============================================
+   // UTILITY FUNCTIONS
+   // ============================================
+   function isValidParam(value) {
+      return value !== null &&
+         value !== undefined &&
+         value !== '' &&
+         value !== 'null' &&
+         value !== 'undefined';
+   }
+
+   function escapeHtml(unsafe) {
+      if (!unsafe) return '';
+      return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+   }
 </script>
 HTML;
 

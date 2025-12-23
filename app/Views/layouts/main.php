@@ -16,7 +16,7 @@
             <i class="fa-solid fa-users-gear" style="color: #ffffff;"></i> WorkAlign
         </a>
 
-        <!-- Botão do menu mobile -->
+        <!-- Mobile menu button -->
         <button class="navbar-toggler d-md-none" type="button" data-toggle="collapse" data-target="#navbarMobileMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -50,7 +50,7 @@
 
     <div class="container-fluid">
         <div class="row">
-            <!-- Menu lateral -->
+            <!-- Side menu -->
             <div class="col-md-3 menu d-none d-md-block">
                 <ul class="menu">
                     <li>
@@ -80,7 +80,7 @@
                 </ul>
             </div>
 
-            <!-- Conteúdo principal -->
+            <!-- Main content -->
             <div class="col-md-9 main-content">
                 <?= $content ?>
             </div>

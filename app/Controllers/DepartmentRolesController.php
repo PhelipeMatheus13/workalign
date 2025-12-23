@@ -2,22 +2,56 @@
 
 namespace App\Controllers;
 
+use App\Core\ErrorMapper;
 use App\Core\Response;
 use App\Core\Request;
 use App\Models\DepartmentRoles;
+use App\Services\DepartmentRolesService;
+use App\Models\Departments;
+
 
 
 class DepartmentRolesController
 {
+
+    public function listRoles(Request $request)
+    {
+        $departmentID = $request->input('department_id');
+        if (!$departmentID || !is_numeric($departmentID)) {
+            return Response::json([
+                'success' => false,
+                'error' => 'INVALID_INPUT',
+                'message' => 'Invalid department ID provided.'
+            ], 400);
+        }
+
+        $model = new DepartmentRoles();
+        $result = $model->listDepartmentRoles($departmentID);
+
+        if (!$result['success']) {
+            return Response::json([
+                'success' => false,
+                'error' => $result['error'],
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
+        }
+
+        return Response::json([
+            'success' => true,
+            'data' => $result['list_roles']
+        ]);
+    }
+
     public function get(Request $request)
     {
         $id = $request->input('id');
-        // Validate ID
         if (!$id || !is_numeric($id)) {
             return Response::json([
                 'success' => false,
                 'error' => 'INVALID_INPUT',
-                'message' => 'Invalid role ID provided.'
+                'message' => 'Invalid role_id provided.',
+                'friendly_message' => 'Please provide a valid role_id.'
             ], 400);
         }
 
@@ -25,20 +59,12 @@ class DepartmentRolesController
         $result = $model->getRoleByID($id);
 
         if (!$result['success']) {
-            $errorMap = [
-                'NOT_FOUND' => ['message' => "Role id=$id not found.", 'code' => 404],
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
                 'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([
@@ -120,34 +146,44 @@ class DepartmentRolesController
 
         $model = new DepartmentRoles();
         $result = $model->createDepartmentRole($data);
-
         if (!$result['success']) {
-            $errorMap = [
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return $this->renderResponse(
                 'Registration Error',
-                $errorConfig['message'],
+                $result['message'],
                 'error',
                 [
+                    'redirectTime' => 5000,
                     'showBackButton' => true,
                     'backUrl' => "departments/roles/create?department_id=$departmentId"
                 ]
             );
         }
 
+        // We need the department name to redirect correctly.
+        $service = new DepartmentRolesService(new Departments());
+        $result = $service->getDepartmentNameByID($departmentId);
+        if (!$result['success']) {
+            return $this->renderResponse(
+                'Registration Error',
+                $result['message'],
+                'error',
+                [
+                    'redirectTime' => 5000,
+                    'showBackButton' => true,
+                    'backUrl' => "departments/roles/create?department_id=$departmentId"
+                ]
+            );
+        }
+
+        $departmentName = $result['department_name'];
         $roleName = $data['name'];
         return $this->renderResponse(
             'Department Created',
             "Department role <strong>$roleName</strong> has been successfully registered!",
             'success',
             [
-                'redirectUrl' => "departments/show?id=$departmentId",
+                'redirectUrl' => "departments/show?id=$departmentId&name=$departmentName", // ID & Name
+                'backUrl' => "departments/show?id=$departmentId&name=$departmentName",
                 'redirectTime' => 2000
             ]
         );
@@ -160,8 +196,8 @@ class DepartmentRolesController
 
     public function update(Request $request)
     {
-        $role_id = $request->input('id');
-        $department_id = $request->input('department_id');
+        $roleID = $request->input('id');
+        $departmentID = $request->input('department_id');
         $data = [
             'name' => $request->input('name'),
             'description' => $request->input('description')
@@ -182,58 +218,52 @@ class DepartmentRolesController
 
         if (!empty($errorMessages)) {
             $errorMessage = implode('<br>', $errorMessages);
-            return $this->renderResponse(
-                'Validation Error',
-                $errorMessage,
-                'error',
-                [
-                    'showBackButton' => true,
-                    'backUrl' => "departments/roles/update?id=$role_id&department_id=$department_id"
-                ]
-            );
+            return Response::json([
+                'success' => false,
+                'error' => 'VALIDATION_ERROR',
+                'message' => $errorMessage,
+                'friendly_message' => 'Please fill in all required fields.'
+            ], 400);
         }
 
         $model = new DepartmentRoles();
-        $result = $model->updateDepartmentRole($role_id, $data);
+        $result = $model->updateDepartmentRole($roleID, $data);
 
         if (!$result['success']) {
-            $errorMap = [
-                'NOT_FOUND' => ['message' => "Role id=$role_id not found.", 'code' => 404],
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
-            return $this->renderResponse(
-                'Update Error',
-                $errorConfig['message'],
-                'error',
-                [
-                    'showBackButton' => true,
-                    'backUrl' => "departments/roles/update?id=$role_id&department_id=$department_id"
-                ]
-            );
+            return Response::json([
+                'success' => false,
+                'error' => $result['error'],
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
-        $departmentName = $data['name'];
-        return $this->renderResponse(
-            'Department Updated',
-            "Department <strong>$departmentName</strong> has been successfully updated!",
-            'success',
-            [
-                'redirectUrl' => "departments/show?id=$department_id",
-                'redirectTime' => 2000,
+        // We need the department name to redirect correctly.
+        $service = new DepartmentRolesService(new Departments());
+        $result = $service->getDepartmentNameByID($departmentID);
+        if (!$result['success']) {
+            return Response::json([
+                'success' => false,
+                'error' => $result['error'],
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
+        }
+
+        $departmentName = $result['department_name'];
+        return Response::json([
+            'success' => true,
+            'message' => 'Role successfully updated.',
+            'data' => [
+                'redirect_url' => "departments/show?id=$departmentID&name=$departmentName"
             ]
-        );
+        ]);
     }
 
     public function delete(Request $request)
     {
         $id = $request->input('id');
 
-        // Validate ID
         if (!$id || !is_numeric($id)) {
             return Response::json([
                 'success' => false,
@@ -246,20 +276,12 @@ class DepartmentRolesController
         $result = $model->deleteDepartmentRole($id);
 
         if (!$result['success']) {
-            $errorMap = [
-                'NOT_FOUND' => ['message' => "Role id=$id not found.", 'code' => 404],
-                'DATABASE_ERROR' => ['message' => $result['message'], 'code' => 500],
-                'DB_OPERATION_FAILED' => ['message' => 'Database operation failed. Please try again later.', 'code' => 500],
-                'INTERNAL_ERROR' => ['message' => 'Internal server error. Please try again later.', 'code' => 500]
-            ];
-
-            $errorConfig = $errorMap[$result['error']] ?? ['message' => 'An error occurred', 'code' => 500];
-
             return Response::json([
                 'success' => false,
                 'error' => $result['error'],
-                'message' => $errorConfig['message']
-            ], $errorConfig['code']);
+                'error_message' => $result['message'],
+                'friendly_message' => ErrorMapper::getFriendlyMessage($result['error'])
+            ], ErrorMapper::getStatusCode($result['error']));
         }
 
         return Response::json([

@@ -219,9 +219,9 @@ $content = <<<'HTML'
    <div class="page-header">
       <h1 class="page-title">Edit Role</h1>
       <div class="header-actions">
-         <a href="app/Views/departments_roles.php" id="backLink">
+         <a href="departments">
             <button type="button" class="btn btn-back btn-sm">
-               <i class="fas fa-arrow-left"></i> Back to Roles
+               <i class="fas fa-arrow-left"></i> Back to Departments
             </button>
          </a>
       </div>
@@ -265,184 +265,438 @@ HTML;
 
 $inlineScript = <<<'HTML'
 <script>
+   // ============================================
+   // INITIALIZATION
+   // ============================================
+    
+   // Global variables
+   let roleID;
+   let departmentID;
+   let redirectURL;
+
    document.addEventListener('DOMContentLoaded', function () {
-      const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-      menuItems.forEach(item => {
-         item.classList.remove('active');
-         if (item.getAttribute('data-menu') === 'departments') {
-            item.classList.add('active');
-         }
-      });
+      console.log('Edit Role Page');
+      // Get IDs from URL
+      const params = Object.fromEntries(new URLSearchParams(window.location.search));
+      ({ id: roleID, department_id: departmentID } = params);
 
-      localStorage.setItem('activeMenu', 'departments');
-
-      // Get role ID from URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const roleId = urlParams.get('id');
-      const departmentId = urlParams.get('department_id');
-
-      document.getElementById('backLink').href = departmentId
-         ? `departments/show?id=${departmentId}`
-         : 'departments';
-
-      // Update back link to include department_id
-      if (departmentId) {
-         document.getElementById('backLink').href = `departments/show?id=${departmentId}`;
+      // Validate parameters
+      if (!isValidParam(roleID) ||  !isValidParam(departmentID)) {
+         showErrorState('Role ID or Department ID is missing in the URL.');
+         console.error(
+            'Role ID or Department ID is missing in the URL:', 
+            { roleID: roleID, departmentID: departmentID }
+         );
+         return;
       }
 
-      if (roleId) {
-         loadRoleData(roleId);
-      } else {
-         showError('Role ID is missing in the URL.');
-      }
+      console.log("Editing role ID:", roleID, "Department ID:", departmentID);
+
+      showLoadingState();
+      loadRoleData(roleID);
 
       // Event listeners
       document.getElementById('cancelBtn').addEventListener('click', function () {
          if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
-            if (departmentId) {
-               window.location.href = `departments/show?id=${departmentId}`;
-            } else {
-               window.location.href = 'departments';
-            }
+            window.history.back();
          }
       });
 
       document.getElementById('roleForm').addEventListener('submit', function (e) {
          e.preventDefault();
-         saveRoleChanges();
+         saveRoleChanges(roleID);
       });
-
-      // Load role data
-      function loadRoleData(roleId) {
-         fetch(`departments/roles/get?id=${roleId}`)
-            .then(response => {
-               if (!response.ok) {
-                  return response.json().then(errorData => {
-                     throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-                  });
-               }
-               return response.json();
-            })
-            .then(response => {
-               if (response.success) {
-                  populateRoleForm(response.data);
-               } else {
-                  throw new Error(response.error || 'Failed to load role data');
-               }
-            })
-            .catch(response => {
-               console.error('Error:', response.error);
-               showError('Error loading role data: ' + response.message);
-            });
-      }
-
-      // Populate role form
-      function populateRoleForm(role) {
-         document.getElementById('loadingState').style.display = 'none';
-         document.getElementById('roleForm').style.display = 'block';
-
-         document.getElementById('name').value = role.name || '';
-         document.getElementById('description').value = role.description || '';
-      }
-
-      // Save role changes
-      function saveRoleChanges() {
-         if (!confirm('Are you sure you want to save these changes?')) {
-            return;
-         }
-
-         const form = document.getElementById('roleForm');
-         const formData = new FormData(form);
-         const saveBtn = document.getElementById('saveBtn');
-         const cancelBtn = document.getElementById('cancelBtn');
-
-         // Validate data before sending.
-         const name = formData.get('name').trim();
-         const description = formData.get('description').trim();
-
-         if (!name) {
-            showError('Please fill in the role name');
-            return;
-         }
-
-         if (!description) {
-            showError('Please fill in the role description');
-            return;
-         }
-
-         const roleData = {
-            id: parseInt(roleId),
-            department_id: parseInt(departmentId),
-            name: name,
-            description: description
-         };
-
-         const originalSaveText = saveBtn.innerHTML;
-
-         // Immediate feedback
-         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Changes...';
-         saveBtn.disabled = true;
-
-         // Hide the cancel button after confirming changes.
-         cancelBtn.style.display = 'none';
-
-         console.log('Sending data:', roleData);
-
-         fetch('departments/roles/update', {
-            method: 'PUT',
-            headers: {
-                  'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(roleData)
-         })
-         .then(response => {
-            const contentType = response.headers.get('content-type');
-            
-            if (contentType && contentType.includes('text/html')) {
-                  return response.text();
-            } else {
-                  return response.text().then(text => {
-                     throw new Error(`Unexpected response type. Expected HTML, got: ${contentType}`);
-                  });
-            }
-         })
-         .then(html => {
-            document.open();
-            document.write(html);
-            document.close();
-         })
-         .catch(error => {
-            console.error('Error:', error);
-            let errorMessage = 'Error updating role: ';
-            
-            if (error.message.includes('Unexpected token')) {
-                  errorMessage += 'Server returned invalid response. Please check server logs.';
-            } else {
-                  errorMessage += error.message;
-            }
-
-            // Restaurar botões em caso de erro
-            saveBtn.innerHTML = originalSaveText;
-            saveBtn.disabled = false;
-            cancelBtn.style.display = 'block';
-            showError(errorMessage);
-         });
-      }
-
-      function showError(message) {
-         document.getElementById('loadingState').style.display = 'none';
-         const roleCard = document.getElementById('roleCard');
-         roleCard.innerHTML = `<div class="error-message">${message}</div>`;
-      }
-
-      function showSuccess(message) {
-         const roleCard = document.getElementById('roleCard');
-         const successDiv = document.createElement('div');
-         successDiv.className = 'success-message';
-         successDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-         roleCard.insertBefore(successDiv, roleCard.firstChild);
-      }
    });
+
+   // ============================================
+   // UI STATE MANAGEMENT FUNCTIONS
+   // ============================================
+
+   function showLoadingState() {
+      const loadingState = document.getElementById('loadingState');
+      const roleForm = document.getElementById('roleForm');
+      
+      if (loadingState) loadingState.style.display = 'block';
+      if (roleForm) roleForm.style.display = 'none';
+   }
+
+   function showFormState() {
+      const loadingState = document.getElementById('loadingState');
+      const roleForm = document.getElementById('roleForm');
+      
+      if (loadingState) loadingState.style.display = 'none';
+      if (roleForm) roleForm.style.display = 'block';
+   }
+
+   function showErrorState(message) {
+      const roleCard = document.getElementById('roleCard');
+      const loadingState = document.getElementById('loadingState');
+      const roleForm = document.getElementById('roleForm');
+      
+      if (loadingState) loadingState.style.display = 'none';
+      if (roleForm) roleForm.style.display = 'none';
+      
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error-message';
+      errorDiv.innerHTML = `
+         <i class="fas fa-exclamation-circle fa-2x" style="margin-bottom: 15px;"></i>
+         <h4 style="color: #c0392b; margin-bottom: 10px;">Unable to Load Role Data</h4>
+         <p>${escapeHtml(message)}</p>
+         <button class="btn btn-primary retry-btn" style="margin-top: 15px;">
+            <i class="fas fa-redo"></i> Try Again
+         </button>
+      `;
+      
+      roleCard.innerHTML = '';
+      roleCard.appendChild(errorDiv);
+      
+      // Add retry button functionality
+      setTimeout(() => {
+         document.querySelector('.retry-btn')?.addEventListener('click', function() {
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Trying...';
+            this.disabled = true;
+            showLoadingState();
+            setTimeout(() => loadRoleData(roleID), 1000);
+         });
+      }, 100);
+   }
+
+   function showSaveSuccessState(message) {
+      const roleCard = document.getElementById('roleCard');
+      const loadingState = document.getElementById('loadingState');
+      const roleForm = document.getElementById('roleForm');
+      
+      if (loadingState) loadingState.style.display = 'none';
+      if (roleForm) roleForm.style.display = 'none';
+      
+      const successDiv = document.createElement('div');
+      successDiv.className = 'success-message';
+      successDiv.innerHTML = `
+         <i class="fas fa-check-circle fa-2x" style="margin-bottom: 15px;"></i>
+         <h4 style="color: #155724; margin-bottom: 10px;">Success!</h4>
+         <p>${escapeHtml(message)}</p>
+         <p style="font-size: 0.9rem; margin-top: 15px; color: #6c757d;">
+            You will be redirected in <span id="countdown">3</span> seconds...
+         </p>
+         <button id="backNowBtn" class="btn btn-success mt-3">
+            Back now
+         </button>
+      `;
+      
+      roleCard.innerHTML = '';
+      roleCard.appendChild(successDiv);
+      document.getElementById('backNowBtn').addEventListener('click', function() {
+         window.location.href = redirectURL ? redirectURL : 'departments';
+      });
+      // Start countdown
+      let seconds = 3;
+      const countdownElement = document.getElementById('countdown');
+      const countdownInterval = setInterval(() => {
+         seconds--;
+         if (countdownElement) {
+            countdownElement.textContent = seconds;
+         }
+         
+         if (seconds <= 0) {
+            clearInterval(countdownInterval);
+            window.location.href = redirectURL ? redirectURL : 'departments';
+         }
+      }, 1000);
+   }
+
+   // ============================================
+   // API CALL FUNCTIONS (Standard Pattern)
+   // ============================================
+
+   function loadRoleData(roleID) {
+      const FUNCTION_NAME = 'loadRoleData';
+      const ENDPOINT = `departments/roles/get?id=${roleID}`;
+      const TIMEOUT_MS = 10000;
+      
+      console.log(`[${FUNCTION_NAME}] Loading role ID: ${roleID}`);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      return fetch(ENDPOINT, {
+         method: 'GET',
+         headers: { 'Content-Type': 'application/json' },
+         signal: controller.signal
+      })
+      .then(function handleResponse(response) {
+         clearTimeout(timeoutId);
+         
+         console.log(`[${FUNCTION_NAME}] Response received:`, {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
+         });
+
+         if (!response.ok) {
+            return response.json()
+               .catch(function handleJsonError() {
+                  console.error(`[${FUNCTION_NAME}] Response is not valid JSON:`, {
+                     status: response.status,
+                     statusText: response.statusText
+                  });
+                  
+                  throw {
+                     type: 'HTTP_ERROR',
+                     status: response.status,
+                     message: response.statusText,
+                     friendlyMessage: `Error ${response.status}: ${response.statusText}`
+                  };
+               })
+               .then(function handleErrorJson(errJson) {
+                  console.error(`[${FUNCTION_NAME}] API Error:`, {
+                     endpoint: ENDPOINT,
+                     status: response.status,
+                     error: errJson.error,
+                     errorMessage: errJson.error_message,
+                  });
+                  
+                  throw {
+                     type: 'API_ERROR',
+                     status: response.status,
+                     error: errJson.error,
+                     errorMessage: errJson.error_message,
+                     friendlyMessage: errJson.friendly_message || `Error: ${errJson.error}`
+                  };
+               });
+         }
+
+         return response.json();
+      })
+      .then(function handleSuccessData(responseBody) {
+         console.log(`[${FUNCTION_NAME}] Response body:`, {
+            success: responseBody.success,
+            hasData: !!responseBody.data
+         });
+
+         if (!responseBody || !responseBody.success || !responseBody.data) {
+            console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+            showErrorState(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+            return;
+         }
+
+         console.log(`[${FUNCTION_NAME}] Role data loaded successfully.`);
+         populateRoleForm(responseBody.data);
+      })
+      .catch(function handleFetchError(err) {
+         clearTimeout(timeoutId);
+
+         if (err && err.name === 'AbortError') {
+            console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+            showErrorState('Request timed out. Please try again.');
+            return;
+         }
+
+         if (err.type && (err.type === 'HTTP_ERROR' || err.type === 'API_ERROR')) {
+            console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status} | Type: ${err.type}`);
+            showErrorState(err.friendlyMessage || 'Error loading role data.');
+            return;
+         }
+
+         console.error(`[${FUNCTION_NAME}] Unexpected error loading role data:`, {
+            name: err.name,
+            message: err.message,
+         });
+         
+         showErrorState('An unexpected error occurred. Please check your connection and try again.');
+      })
+      .finally(() => {
+         clearTimeout(timeoutId);
+         console.log(`[${FUNCTION_NAME}] Completed`);
+      });
+   }
+
+   function saveRoleChanges(roleID) {
+      const FUNCTION_NAME = 'saveRoleChanges';
+      const ENDPOINT = 'departments/roles/update';
+      const TIMEOUT_MS = 10000;
+      
+      console.log(`[${FUNCTION_NAME}] Saving changes for role ID: ${roleID}`);
+
+      // Validate data before sending
+      const name = document.getElementById('name').value.trim();
+      const description = document.getElementById('description').value.trim();
+
+      if (!name) {
+         alert('Please fill in the role name');
+         return;
+      }
+
+      if (!description) {
+         alert('Please fill in the role description');
+         return;
+      }
+
+      if (!confirm('Are you sure you want to save these changes?')) {
+         return;
+      }
+
+      const roleData = {
+         id: parseInt(roleID),
+         department_id: departmentID ? parseInt(departmentID) : null,
+         name: name,
+         description: description
+      };
+
+      const saveBtn = document.getElementById('saveBtn');
+      const cancelBtn = document.getElementById('cancelBtn');
+      const originalSaveText = saveBtn.innerHTML;
+
+      // Visual feedback
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Changes...';
+      saveBtn.disabled = true;
+      cancelBtn.style.display = 'none';
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      console.log(`[${FUNCTION_NAME}] Sending data:`, roleData);
+
+      return fetch(ENDPOINT, {
+         method: 'PUT',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(roleData),
+         signal: controller.signal
+      })
+      .then(function handleResponse(response) {
+         clearTimeout(timeoutId);
+
+         console.log(`[${FUNCTION_NAME}] Response received:`, {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
+         });
+
+         if (!response.ok) {
+            return response.json()
+               .catch(function handleJsonError() {
+                  console.error(`[${FUNCTION_NAME}] Response is not valid JSON:`, {
+                     status: response.status,
+                     statusText: response.statusText
+                  });
+                  
+                  throw {
+                     type: 'HTTP_ERROR',
+                     status: response.status,
+                     message: response.statusText,
+                     friendlyMessage: `Error ${response.status}: ${response.statusText}`
+                  };
+               })
+               .then(function handleErrorJson(errJson) {
+                  console.error(`[${FUNCTION_NAME}] API Error:`, {
+                     endpoint: ENDPOINT,
+                     status: response.status,
+                     error: errJson.error,
+                     errorMessage: errJson.error_message,
+                  });
+                  
+                  throw {
+                     type: 'API_ERROR',
+                     status: response.status,
+                     error: errJson.error,
+                     errorMessage: errJson.error_message,
+                     friendlyMessage: errJson.friendly_message || `Error: ${errJson.error}`
+                  };
+               });
+         }
+
+         return response.json();
+      })
+      .then(function handleSuccess(responseBody) {
+         if (!responseBody || !responseBody.success) {
+            console.error(`[${FUNCTION_NAME}] Invalid response structure!`, responseBody);
+            
+            // Restore buttons on error
+            restoreButtons(saveBtn, cancelBtn, originalSaveText);
+            alert(responseBody?.friendly_message || 'Invalid server response. Please try again.');
+            return;
+         }  
+         
+         console.log(`[${FUNCTION_NAME}] Role updated successfully.`);
+         redirectURL = responseBody.data?.redirect_url || null;
+         showSaveSuccessState(responseBody.message || 'Role successfully updated.');
+      })
+      .catch(function handleFetchError(err) {
+         clearTimeout(timeoutId);
+
+         if (err && err.name === 'AbortError') {
+            console.error(`[${FUNCTION_NAME}] Timeout after ${TIMEOUT_MS}ms`);
+            alert('Request timed out. Please try again.');
+            restoreButtons(saveBtn, cancelBtn, originalSaveText);
+            return;
+         }
+
+         if (err.type && (err.type === 'API_ERROR' || err.type === 'HTTP_ERROR')) {
+            console.error(`[${FUNCTION_NAME}] Error occurred | Status: ${err.status || 'N/A'} | Type: ${err.type}`);
+            
+            // Show error message
+            const errorMessage = err.friendlyMessage || 'Error updating role.';
+            restoreButtons(saveBtn, cancelBtn, originalSaveText);
+            alert(errorMessage);
+            return;
+         }
+
+         console.error(`[${FUNCTION_NAME}] Unexpected error:`, {
+            name: err.name,
+            message: err.message,
+         });
+
+         alert('An unexpected error occurred. Please check your connection and try again.');
+         restoreButtons(saveBtn, cancelBtn, originalSaveText);
+      })
+      .finally(() => {
+         clearTimeout(timeoutId);
+         console.log(`[${FUNCTION_NAME}] Completed`);
+      });
+   }
+
+   // ============================================
+   // DATA MANAGEMENT FUNCTIONS
+   // ============================================
+
+   function populateRoleForm(role) {
+      const FUNCTION_NAME = 'populateRoleForm';
+      console.log(`[${FUNCTION_NAME}] Populating form with role data:`, role);
+
+      document.getElementById('name').value = role.name || '';
+      document.getElementById('description').value = role.description || '';
+      
+      showFormState();
+      console.log(`[${FUNCTION_NAME}] Form populated successfully`);
+   }
+
+   function restoreButtons(saveBtn, cancelBtn, originalSaveText) {
+      saveBtn.innerHTML = originalSaveText;
+      saveBtn.disabled = false;
+      cancelBtn.style.display = 'block';
+   }
+
+
+   // ============================================
+   // UTILITY FUNCTIONS
+   // ============================================
+   
+   function isValidParam(value) {
+      return value !== null &&
+         value !== undefined &&
+         value !== '' &&
+         value !== 'null' &&
+         value !== 'undefined';
+   }
+
+   function escapeHtml(unsafe) {
+      if (!unsafe) return '';
+      return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+   }
 </script>
 HTML;
 

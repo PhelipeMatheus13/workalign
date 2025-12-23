@@ -3,7 +3,6 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Router;
-use App\Core\Response;
 
 $router = new Router();
 
@@ -27,9 +26,8 @@ $router->add('GET', '/departments/update', 'DepartmentsController@updateForm');
 $router->add('GET', '/departments/show', 'DepartmentsController@show');
 
 // departments/controllers
-$router->add('GET', '/departments/with-roles', 'DepartmentsController@listWithRoles');
+$router->add('GET', '/departments/with-roles', 'DepartmentsController@listDepartmentsWithRoles');
 $router->add('GET', '/departments/list', 'DepartmentsController@list');
-$router->add('GET', '/departments/roles/list', 'DepartmentsController@listRoles');
 $router->add('GET', '/departments/get', 'DepartmentsController@get');
 $router->add('POST', '/departments/create', 'DepartmentsController@create');
 $router->add('PUT', '/departments/update', 'DepartmentsController@update');
@@ -40,6 +38,7 @@ $router->add('GET', '/departments/roles/create', 'DepartmentRolesController@crea
 $router->add('GET', '/departments/roles/update', 'DepartmentRolesController@updateForm');
 // departments/roles/controllers
 $router->add('POST', '/departments/roles/create', 'DepartmentRolesController@create');
+$router->add('GET', '/departments/roles/list', 'DepartmentRolesController@listRoles');
 $router->add('GET', '/departments/roles/get', 'DepartmentRolesController@get');
 $router->add('PUT', '/departments/roles/update', 'DepartmentRolesController@update');
 $router->add('DELETE', '/departments/roles/delete', 'DepartmentRolesController@delete');

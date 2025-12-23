@@ -62,6 +62,66 @@ class DepartmentRoles
             ];
         }
     }
+
+
+    // This function can be implemented to list roles for a specific department.
+    public function listDepartmentRoles($departmentID)
+    {
+        try {
+            $db = Database::connect();
+            $stmt = $db->prepare('
+            SELECT
+                  r.id,
+                  r.name,
+                  r.description,
+                  (SELECT COUNT(*) FROM employees e WHERE e.role_id = r.id AND e.status <> "fired") AS employees_count,
+                  (SELECT COALESCE(SUM(e.salary), 0) FROM employees e WHERE e.role_id = r.id AND e.status <> "fired") AS total_salary,
+                  (SELECT CONCAT(e.first_name, " ", e.last_name) FROM employees e WHERE e.role_id = r.id AND e.status <> "fired" ORDER BY e.salary DESC LIMIT 1) AS highest_paid_name,
+                  (SELECT e.salary FROM employees e WHERE e.role_id = r.id AND e.status <> "fired" ORDER BY e.salary DESC LIMIT 1) AS highest_paid_salary
+            FROM roles r
+            WHERE r.department_id = :department_id
+            ORDER BY r.name ASC
+         ');
+
+            $success = $stmt->execute([':department_id' => $departmentID]);
+            if (!$success) {
+                $errorInfo = $stmt->errorInfo();
+                return [
+                    'success' => false,
+                    'error' => 'DATABASE_ERROR',
+                    'message' => $errorInfo[2]
+                ];
+            }
+
+            $roles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($roles as &$r) {
+                $r['total_salary'] = number_format(($r['total_salary'] ?? 0), 2, '.', ',');
+                $r['highest_paid_salary'] = isset($r['highest_paid_salary'])
+                    ? number_format($r['highest_paid_salary'], 2, '.', ',')
+                    : null;
+            }
+            unset($r);
+
+            return [
+                'success' => true,
+                'list_roles' => $roles
+            ];
+        } catch (PDOException $e) {
+            return [
+                'success' => false,
+                'error' => 'DB_OPERATION_FAILED',
+                'message' => $e->getMessage()
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'INTERNAL_ERROR',
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
     public function createDepartmentRole($data)
     {
         try {

@@ -145,58 +145,51 @@ HTML;
 
 $inlineScript = <<<'HTML'
 <script>
-   document.addEventListener('DOMContentLoaded', function () {
-      const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-      menuItems.forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-menu') === 'departments') {
-               item.classList.add('active');
-            }
+      document.addEventListener('DOMContentLoaded', function () {
+         console.log('Roles Create Page'); // Debug
+         // Capture department_id from URL
+         const urlParams = new URLSearchParams(window.location.search);
+         const departmentID = urlParams.get('department_id');
+
+         console.log('URL Parameters:', window.location.search); // Debug
+         console.log('Department ID from URL:', departmentID); // Debug
+
+         if (!departmentID) {
+               console.error('Department ID not found in URL');
+               alert('Error: Department ID not found. Returning to previous page.');
+               window.history.back();
+               return;
+         }
+
+         document.getElementById('department_id').value = departmentID;
+         console.log(
+            'Department ID set in hidden field:',
+            document.getElementById('department_id').value
+         ); // Debug
+
+         document.getElementById('roleForm').addEventListener('submit', function (e) {
+               // Validation of required fields
+               const name = document.getElementById('role_name').value;
+               const description = document.getElementById('role_description').value;
+               const departmentID = document.getElementById('department_id').value;
+
+               console.log('Form submission - Department ID:', departmentID); // Debug
+
+               if (!name || !description) {
+                  e.preventDefault();
+                  alert('Please fill all required fields');
+                  return false;
+               }
+
+               if (!departmentID) {
+                  e.preventDefault();
+                  alert('Error: Department ID is missing. Cannot create role.');
+                  return false;
+               }
+
+               return true;
+         });
       });
-
-      localStorage.setItem('activeMenu', 'departments');
-
-      // Capture department_id from URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const departmentId = urlParams.get('department_id');
-
-      console.log('URL Parameters:', window.location.search); // Debug
-      console.log('Department ID from URL:', departmentId); // Debug
-
-      if (departmentId) {
-            document.getElementById('department_id').value = departmentId;
-            console.log('Department ID set in hidden field:', document.getElementById('department_id').value); // Debug
-      } else {
-            console.error('Department ID not found in URL');
-            alert('Error: Department ID not found. Returning to previous page.');
-            window.history.back();
-            return;
-      }
-
-
-      document.getElementById('roleForm').addEventListener('submit', function (e) {
-            // Validation of required fields
-            const name = document.getElementById('role_name').value;
-            const description = document.getElementById('role_description').value;
-            const departmentId = document.getElementById('department_id').value;
-
-            console.log('Form submission - Department ID:', departmentId); // Debug
-
-            if (!name || !description) {
-               e.preventDefault();
-               alert('Please fill all required fields');
-               return false;
-            }
-
-            if (!departmentId) {
-               e.preventDefault();
-               alert('Error: Department ID is missing. Cannot create role.');
-               return false;
-            }
-
-            return true;
-      });
-   });
 </script>
 HTML;
 

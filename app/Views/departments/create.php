@@ -167,16 +167,6 @@ HTML;
 $inlineScript = <<<'HTML'
 <script>
    document.addEventListener('DOMContentLoaded', function () {
-      const menuItems = document.querySelectorAll('.menu-item, #navbarMobileMenu .nav-link');
-      menuItems.forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-menu') === 'departments') {
-               item.classList.add('active');
-            }
-      });
-
-      localStorage.setItem('activeMenu', 'departments');
-
       // Form submission - Validation only, no preventative default.
       document.getElementById('departmentForm').addEventListener('submit', function (e) {
             // Validation of required fields
