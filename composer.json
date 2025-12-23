@@ -1,0 +1,11 @@
+{
+   "name": "workalign/project",
+   "description": "WorkAlign is an employee and department management system developed to simplify human resources administration.",
+   "type": "project",
+   "autoload": {
+      "psr-4": {
+         "App\\": "app/"
+      }
+   },
+   "require": {}
+}
